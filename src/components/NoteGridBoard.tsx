@@ -13,9 +13,14 @@ import {
   Button,
   useTheme,
   Grow,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Tooltip,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { Add as AddIcon, Delete as DeleteIcon, NoteAdd as NoteAddIcon } from '@mui/icons-material';
+import { Add as AddIcon, Delete as DeleteIcon, NoteAdd as NoteAddIcon, Link as LinkIcon, LinkOff as LinkOffIcon } from '@mui/icons-material';
 import { Idea, Note } from '../models/Idea.ts';
 import { BounceIn, popIn, pulseGlow } from './Animations.tsx';
 
@@ -53,6 +58,8 @@ interface NoteGridBoardProps {
   deleteNote: (ideaId: string, noteId: string) => void;
   updateNote: (ideaId: string, noteId: string, updates: { content?: string; position?: { x: number; y: number } }) => void;
   addIdea: (idea: Omit<Idea, 'id' | 'createdAt' | 'updatedAt' | 'notes' | 'connections'>) => Idea;
+  onAddConnection?: (sourceId: string, targetId: string) => void;
+  onRemoveConnection?: (sourceId: string, targetId: string) => void;
 }
 
 export default function NoteGridBoard({
@@ -61,9 +68,13 @@ export default function NoteGridBoard({
   deleteNote,
   updateNote,
   addIdea,
+  onAddConnection,
+  onRemoveConnection,
 }: NoteGridBoardProps) {
   const theme = useTheme();
   const [createOpen, setCreateOpen] = useState(false);
+  const [linkMenuAnchor, setLinkMenuAnchor] = useState<{ el: HTMLElement; ideaId: string } | null>(null);
+  const [unlinkMenuAnchor, setUnlinkMenuAnchor] = useState<{ el: HTMLElement; ideaId: string } | null>(null);
   const [newContent, setNewContent] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<{ ideaId: string; noteId: string } | null>(null);
   const [dragging, setDragging] = useState<{ ideaId: string; noteId: string; offsetX: number; offsetY: number } | null>(null);
@@ -267,8 +278,11 @@ export default function NoteGridBoard({
       )}
 
       {flat.map(({ note, ideaId, ideaTitle }, index) => {
+        const idea = ideas.find((i) => i.id === ideaId);
+        const connections = idea?.connections ?? [];
         const isDraggingThis = dragging?.noteId === note.id && dragging?.ideaId === ideaId;
         const pos = isDraggingThis && dragPos ? dragPos : note.position ?? { x: 0, y: 0 };
+        const canLink = onAddConnection && ideas.filter((i) => i.id !== ideaId && !connections.includes(i.id)).length > 0;
 
         return (
           <Box
@@ -309,18 +323,52 @@ export default function NoteGridBoard({
               <Typography variant="caption" color="text.secondary" noWrap sx={{ flex: 1, mr: 1 }}>
                 {ideaTitle}
               </Typography>
-              <IconButton
-                size="small"
-                aria-label="Delete note"
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteClick(ideaId, note.id);
-                }}
-                sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
+              <Box sx={{ display: 'flex', gap: 0 }}>
+                {onRemoveConnection && connections.length > 0 && (
+                  <Tooltip title="Unlink from connected ideas">
+                    <IconButton
+                      size="small"
+                      aria-label="Unlink"
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUnlinkMenuAnchor({ el: e.currentTarget, ideaId });
+                      }}
+                      sx={{ color: 'text.secondary', '&:hover': { color: 'warning.main' } }}
+                    >
+                      <LinkOffIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                {canLink && (
+                  <Tooltip title="Link to another idea">
+                    <IconButton
+                      size="small"
+                      aria-label="Link"
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLinkMenuAnchor({ el: e.currentTarget, ideaId });
+                      }}
+                      sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                    >
+                      <LinkIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                <IconButton
+                  size="small"
+                  aria-label="Delete note"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteClick(ideaId, note.id);
+                  }}
+                  sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Box>
             </Box>
             <Typography
               variant="body2"
@@ -414,6 +462,66 @@ export default function NoteGridBoard({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {unlinkMenuAnchor && (
+        <Menu
+          anchorEl={unlinkMenuAnchor.el}
+          open={!!unlinkMenuAnchor}
+          onClose={() => setUnlinkMenuAnchor(null)}
+          onClick={(e) => e.stopPropagation()}
+          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        >
+          {ideas
+            .filter((i) => ideas.find((x) => x.id === unlinkMenuAnchor.ideaId)?.connections.includes(i.id))
+            .map((target) => (
+              <MenuItem
+                key={target.id}
+                onClick={() => {
+                  if (onRemoveConnection) {
+                    onRemoveConnection(unlinkMenuAnchor.ideaId, target.id);
+                    setUnlinkMenuAnchor(null);
+                  }
+                }}
+              >
+                <ListItemIcon>
+                  <LinkOffIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={`Unlink from "${target.title}"`} />
+              </MenuItem>
+            ))}
+        </Menu>
+      )}
+
+      {linkMenuAnchor && (
+        <Menu
+          anchorEl={linkMenuAnchor.el}
+          open={!!linkMenuAnchor}
+          onClose={() => setLinkMenuAnchor(null)}
+          onClick={(e) => e.stopPropagation()}
+          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        >
+          {ideas
+            .filter((i) => i.id !== linkMenuAnchor.ideaId && !ideas.find((x) => x.id === linkMenuAnchor.ideaId)?.connections.includes(i.id))
+            .map((target) => (
+              <MenuItem
+                key={target.id}
+                onClick={() => {
+                  if (onAddConnection) {
+                    onAddConnection(linkMenuAnchor.ideaId, target.id);
+                    setLinkMenuAnchor(null);
+                  }
+                }}
+              >
+                <ListItemIcon>
+                  <LinkIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={`Link to "${target.title}"`} />
+              </MenuItem>
+            ))}
+        </Menu>
+      )}
     </Box>
   );
 }

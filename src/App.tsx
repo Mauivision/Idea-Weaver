@@ -486,6 +486,8 @@ function App() {
                     deleteNote={deleteNote}
                     updateNote={updateNote}
                     addIdea={addIdea}
+                    onAddConnection={connectIdeas}
+                    onRemoveConnection={handleDisconnectIdeas}
                   />
                 </Box>
               )}
