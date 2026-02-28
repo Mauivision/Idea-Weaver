@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -108,7 +108,7 @@ export default function ClusterGrid({
   const [dragOverCluster, setDragOverCluster] = useState<string | null>(null);
   const [connections, setConnections] = useState<{ x1: number; y1: number; x2: number; y2: number; key: string }[]>([]);
 
-  const clusters = useMemo<ClusterData[]>(() => {
+  const clusters: ClusterData[] = (() => {
     const map = new Map<string, Idea[]>();
     ideas.forEach((idea) => {
       const cat = idea.category || 'Uncategorized';
@@ -123,7 +123,7 @@ export default function ClusterGrid({
     });
     result.sort((a, b) => a.name.localeCompare(b.name));
     return result;
-  }, [ideas, colors.length]);
+  })();
 
   const updateConnectionLines = useCallback(() => {
     if (!containerRef.current) return;
