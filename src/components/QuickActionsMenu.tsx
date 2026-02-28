@@ -26,17 +26,6 @@ import {
 import IdeaShareDialog from './IdeaShareDialog.tsx';
 import { Idea } from '../models/Idea.tsx';
 
-QuickActionsMenu.propTypes = {
-  idea: PropTypes.object.isRequired,
-  onEdit: PropTypes.func,
-  onDelete: PropTypes.func,
-  onToggleFavorite: PropTypes.func,
-  onConnect: PropTypes.func,
-  onDuplicate: PropTypes.func,
-  onShare: PropTypes.func,
-  onArchive: PropTypes.func
-};
-
 const QuickActionsMenu = React.memo(({ 
   idea, 
   onEdit, 
@@ -157,6 +146,17 @@ const QuickActionsMenu = React.memo(({
     </>
   );
 });
+
+QuickActionsMenu.propTypes = {
+  idea: PropTypes.object.isRequired,
+  onEdit: PropTypes.func,
+  onDelete: PropTypes.func,
+  onToggleFavorite: PropTypes.func,
+  onConnect: PropTypes.func,
+  onDuplicate: PropTypes.func,
+  onShare: PropTypes.func,
+  onArchive: PropTypes.func
+};
 
 export default QuickActionsMenu;
 

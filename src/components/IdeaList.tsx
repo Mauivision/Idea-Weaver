@@ -196,7 +196,7 @@ const IdeaList: React.FC<IdeaListProps> = React.memo(({
         </Box>
       )}
 
-      <Grid container spacing={3} onClick={handleGridClick}>
+      <Grid container spacing={3}>
         {ideas.map((idea, index) => {
           const dragged = isDragged(idea.id);
           const dragOver = isDragOver(idea.id);
