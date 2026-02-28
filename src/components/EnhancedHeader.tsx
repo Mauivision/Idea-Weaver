@@ -64,8 +64,8 @@ interface EnhancedHeaderProps {
   showFavoritesOnly: boolean;
   onFavoritesToggle: (show: boolean) => void;
   onNewIdea: () => void;
-  onViewModeChange: (mode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart') => void;
-  currentViewMode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart';
+  onViewModeChange: (mode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'clusters') => void;
+  currentViewMode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'clusters';
   onThemeToggle: () => void;
   isDarkMode: boolean;
   onExport: (format: 'json' | 'csv' | 'pdf') => void;
@@ -166,6 +166,7 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
 
   const viewModes = [
     { id: 'board', label: 'Notes Board', icon: <GridOnIcon />, description: 'Notes on a snap grid (home)' },
+    { id: 'clusters', label: 'Clusters', icon: <HomeIcon />, description: 'Ideas grouped into weavy clusters' },
     { id: 'list', label: 'Idea List', icon: <LightbulbIcon />, description: 'Browse ideas in a list format' },
     { id: 'graph', label: 'Idea Graph', icon: <AccountTreeIcon />, description: 'Visualize idea connections' },
     { id: 'flowchart', label: 'Flow Chart', icon: <AutoGraphIcon />, description: 'Create flowcharts from ideas' },
@@ -178,6 +179,7 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
 
   const navigationItems = [
     { id: 'board', label: 'Home (Notes Board)', icon: <HomeIcon /> },
+    { id: 'clusters', label: 'Clusters', icon: <HomeIcon /> },
     { id: 'list', label: 'Ideas', icon: <LightbulbIcon /> },
     { id: 'projects', label: 'Projects', icon: <AssignmentIcon /> },
     { id: 'brainstorm', label: 'Brainstorm', icon: <PsychologyIcon /> },

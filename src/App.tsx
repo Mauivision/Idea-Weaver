@@ -30,6 +30,7 @@ import DuplicateDetection from './components/DuplicateDetection.tsx';
 import SmartLinking from './components/SmartLinking.tsx';
 import IdeaTemplates from './components/IdeaTemplates.tsx';
 import NoteGridBoard from './components/NoteGridBoard.tsx';
+import ClusterGrid from './components/ClusterGrid.tsx';
 import { Idea } from './models/Idea.ts';
 import AutosaveIndicator from './components/AutosaveIndicator.tsx';
 import VoiceInputFab from './components/VoiceInputFab.tsx';
@@ -89,7 +90,7 @@ function App() {
     message: '',
     severity: 'info'
   });
-  const [currentViewMode, setCurrentViewMode] = useState<'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart'>('board');
+  const [currentViewMode, setCurrentViewMode] = useState<'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'clusters'>('board');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [advancedSearchResults, setAdvancedSearchResults] = useState<Idea[]>([]);
@@ -282,7 +283,7 @@ function App() {
     showToast('Ideas reordered!', 'success');
   }, [updateIdea, showToast]);
 
-  const handleViewModeChange = useCallback((mode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart') => {
+  const handleViewModeChange = useCallback((mode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'clusters') => {
     setCurrentViewMode(mode);
     if (mode === 'list' || mode === 'graph') {
       toggleViewMode();
@@ -445,7 +446,7 @@ function App() {
         
         {loading && <LinearProgress color="secondary" />}
         
-        <Container maxWidth={currentViewMode === 'list' ? 'lg' : false} disableGutters={currentViewMode === 'board' || currentViewMode === 'graph' || currentViewMode === 'mindmap' || currentViewMode === 'flowchart'} sx={{ mt: 2, mb: 4, flexGrow: 1 }}>
+        <Container maxWidth={currentViewMode === 'list' ? 'lg' : false} disableGutters={currentViewMode === 'board' || currentViewMode === 'graph' || currentViewMode === 'mindmap' || currentViewMode === 'flowchart' || currentViewMode === 'clusters'} sx={{ mt: 2, mb: 4, flexGrow: 1 }}>
           <Snackbar 
             open={snackbar.open} 
             autoHideDuration={3000} 
@@ -488,6 +489,20 @@ function App() {
                     addIdea={addIdea}
                     onAddConnection={connectIdeas}
                     onRemoveConnection={handleDisconnectIdeas}
+                  />
+                </Box>
+              )}
+
+              {currentViewMode === 'clusters' && (
+                <Box sx={{ height: 'calc(100vh - 140px)', width: '100%' }}>
+                  <ClusterGrid
+                    ideas={filteredIdeas}
+                    onUpdate={updateIdea}
+                    onDelete={handleDeleteIdea}
+                    onToggleFavorite={toggleFavorite}
+                    onAddIdea={addIdea}
+                    onAddNote={handleAddNoteToIdea}
+                    categories={categories.filter(cat => cat !== 'All')}
                   />
                 </Box>
               )}
