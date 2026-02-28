@@ -1,0 +1,78 @@
+# .cursorrules — Idea Weaver Project Instructions
+
+You are an expert React/TypeScript developer building Idea Weaver: a voice-first, minimalist note-taking app for busy professionals (contractors, tradespeople, field workers).
+
+## Core Principles
+- Prioritize extreme simplicity and low friction in every feature.
+- Deliver immediate value: users should experience the "magic" of voice-to-note within the first 10 seconds.
+- Focus on mobile-first design and usability on job sites (touch-friendly, large targets, minimal typing).
+- Build toward a sellable product: clean code, maintainable structure, production-ready patterns.
+- Always reason step-by-step before writing code: plan → explain → implement.
+- Preserve existing code structure unless explicitly asked to refactor.
+
+## Technology & Style Rules
+- Use React 18+ with TypeScript (strict mode, no `any`).
+- Prefer functional components and hooks only — never class components.
+- State: IdeasContext for ideas/notes; local state with useState otherwise. Zustand available for global UI state.
+- Styling: MUI (Material-UI) + Emotion for the main app; clean inline styles for standalone screens (e.g. onboarding).
+- File & naming conventions:
+  - Folders: kebab-case (components, contexts, hooks, models)
+  - Components: PascalCase (OnboardingScreen.tsx, VoiceInputButton.tsx)
+  - Hooks: useCamelCase (useSpeechRecognition.ts, useIdeas.ts)
+  - Types: PascalCase (Idea, Note, SpeechState)
+  - Constants: UPPER_SNAKE_CASE (ONBOARDING_STORAGE_KEY)
+- Imports: group by type (React → third-party → local).
+- Keep components small (< 200 lines); extract logic into custom hooks or utils.
+- Always add types; prefer interfaces over types for props/state.
+- Use descriptive variable/function names with auxiliary verbs (isListening, hasPermission, handleStartListening).
+
+## Feature-Specific Guidelines
+### Onboarding Flow
+- Zero friction entry: no login, no email, no forms on first load.
+- Hero screen: one strong headline ("Capture ideas instantly — from voice to organized notes") + large primary button ("Start Speaking").
+- Use Web Speech API (SpeechRecognition) for native voice input — request mic permission only on button press.
+- Show instant transcription (interim + final results when possible).
+- After first successful note: display text prominently + subtle one-time premium prompt ("Unlock across devices — $1.99 one-time").
+- Completion: set localStorage flag ("ideaWeaverOnboardingCompleted": "true") → skip onboarding on future loads.
+- Transition to main app: smooth fade or opacity change.
+- See `OnboardingScreen.tsx` and `index.tsx` for current implementation.
+
+### Voice Input
+- Primary interaction method — make it feel instant and reliable.
+- Use browser-native SpeechRecognition (no external libraries initially).
+- Handle errors gracefully: unsupported browser → fallback textarea; no permission → clear message.
+- Language: en-US (make configurable later).
+- Show visual feedback while listening (e.g., "Listening…", pulsing indicator).
+
+### Notes & Data
+- Data model: `Idea` in `src/models/Idea.ts` with notes, connections, tags, category.
+- Free tier: store via `useIdeas` hook → localStorage.
+- Premium (future): prepare abstraction layer for backend sync (Supabase/Convex/Firebase).
+- Support basic markdown rendering where applicable.
+
+### Premium / Monetization
+- One-time $1.99 unlock — no subscriptions initially.
+- Use Stripe Checkout, Gumroad, or Lemon Squeezy.
+- Flow: redirect to payment provider → on success, set premium flag and unlock features.
+- Placeholder in `OnboardingScreen.tsx` → `handleUnlock()` with TODO comments for real integration.
+- Clearly communicate value: cross-device sync, unlimited storage, templates, export.
+
+## Production & Quality Rules
+- Mobile-first, responsive design (test on small screens).
+- Accessibility: semantic HTML, aria-labels on interactive elements, keyboard support.
+- Error handling: user-friendly messages + console logging (later add monitoring).
+- Performance: memoize expensive components, avoid unnecessary renders.
+- Security: never store sensitive data client-side; validate all inputs.
+- Add loading/error states for any async operation.
+- PWA: manifest and service worker already present.
+- Analytics: consider Vercel Analytics or PostHog.
+- Keep bundle size minimal — lazy-load non-critical parts.
+
+## When Editing or Generating Code
+- Prefer minimal, targeted changes — do not rewrite unrelated sections.
+- Include complete, working snippets with imports and types.
+- Add brief comments for non-obvious logic.
+- Suggest tests when adding business logic or payment flows.
+- If uncertain, ask for clarification rather than assume.
+
+Follow these instructions precisely for all code generation, refactoring, and debugging tasks in this project.
