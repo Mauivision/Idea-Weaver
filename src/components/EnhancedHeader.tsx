@@ -1,3 +1,4 @@
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import RecentSearches from './RecentSearches.tsx';
 import {
   AppBar,
