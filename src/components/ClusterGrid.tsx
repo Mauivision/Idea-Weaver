@@ -28,10 +28,10 @@ import {
   FavoriteBorder as FavoriteBorderIcon,
   Favorite as FavoriteIcon,
   MoreVert as MoreVertIcon,
-  DragIndicator as DragIndicatorIcon,
   CreateNewFolder as CreateNewFolderIcon,
   DriveFileRenameOutline as RenameIcon,
   NoteAdd as NoteAddIcon,
+  CenterFocusStrong as FocusIcon,
 } from '@mui/icons-material';
 import { Idea } from '../models/Idea.ts';
 import { popIn, pulseGlow } from './Animations.tsx';
@@ -44,6 +44,7 @@ interface ClusterGridProps {
   onAddIdea: (idea: Omit<Idea, 'id' | 'createdAt' | 'updatedAt' | 'notes' | 'connections'>) => Idea;
   onAddNote: (ideaId: string, content: string) => void;
   categories: string[];
+  onFocusIdea?: (id: string) => void;
 }
 
 const CLUSTER_COLORS = [
@@ -87,6 +88,7 @@ export default function ClusterGrid({
   onAddIdea,
   onAddNote,
   categories,
+  onFocusIdea,
 }: ClusterGridProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -814,6 +816,21 @@ export default function ClusterGrid({
           </ListItemIcon>
           <ListItemText>Edit</ListItemText>
         </MenuItem>
+        {onFocusIdea && (
+          <MenuItem
+            onClick={() => {
+              if (cardMenu) {
+                onFocusIdea(cardMenu.idea.id);
+                setCardMenu(null);
+              }
+            }}
+          >
+            <ListItemIcon>
+              <FocusIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Brainstorm this</ListItemText>
+          </MenuItem>
+        )}
         <MenuItem
           onClick={() => {
             if (cardMenu) {

@@ -31,6 +31,7 @@ import SmartLinking from './components/SmartLinking.tsx';
 import IdeaTemplates from './components/IdeaTemplates.tsx';
 import NoteGridBoard from './components/NoteGridBoard.tsx';
 import ClusterGrid from './components/ClusterGrid.tsx';
+import IdeaFocusWeb from './components/IdeaFocusWeb.tsx';
 import { Idea } from './models/Idea.ts';
 import AutosaveIndicator from './components/AutosaveIndicator.tsx';
 import VoiceInputFab from './components/VoiceInputFab.tsx';
@@ -99,6 +100,7 @@ function App() {
   const [showSmartLinking, setShowSmartLinking] = useState(true);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [focusedIdeaId, setFocusedIdeaId] = useState<string | null>(null);
 
   // Update error state when the error changes
   useEffect(() => {
@@ -503,6 +505,7 @@ function App() {
                     onAddIdea={addIdea}
                     onAddNote={handleAddNoteToIdea}
                     categories={categories.filter(cat => cat !== 'All')}
+                    onFocusIdea={setFocusedIdeaId}
                   />
                 </Box>
               )}
@@ -645,6 +648,28 @@ function App() {
           )}
         </Container>
         
+        {/* Focus Web overlay */}
+        {focusedIdeaId && (() => {
+          const focusedIdea = ideas.find(i => i.id === focusedIdeaId);
+          if (!focusedIdea) return null;
+          return (
+            <Box sx={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1100, bgcolor: 'background.default' }}>
+              <IdeaFocusWeb
+                idea={focusedIdea}
+                allIdeas={ideas}
+                onBack={() => setFocusedIdeaId(null)}
+                onUpdate={updateIdea}
+                onToggleFavorite={toggleFavorite}
+                onAddNote={handleAddNoteToIdea}
+                onDeleteNote={handleDeleteNoteFromIdea}
+                onAddConnection={connectIdeas}
+                onRemoveConnection={(s, t) => { disconnectIdeas(s, t); }}
+                onFocusIdea={setFocusedIdeaId}
+              />
+            </Box>
+          );
+        })()}
+
         {/* Keyboard Shortcuts Help Dialog */}
         <KeyboardShortcutsHelp
           open={showKeyboardHelp}
