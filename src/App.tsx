@@ -496,7 +496,7 @@ function App() {
               {currentViewMode === 'clusters' && (
                 <Box sx={{ height: 'calc(100vh - 140px)', width: '100%' }}>
                   <ClusterGrid
-                    ideas={filteredIdeas}
+                    ideas={ideas}
                     onUpdate={updateIdea}
                     onDelete={handleDeleteIdea}
                     onToggleFavorite={toggleFavorite}
