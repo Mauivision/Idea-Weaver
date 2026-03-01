@@ -36,7 +36,7 @@ const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({ open, onC
     {
       category: 'Ideas',
       shortcuts: [
-        { keys: ['N'], description: 'Create new idea' },
+        { keys: ['Ctrl', 'N'], description: 'Create new idea' },
         { keys: ['Del'], description: 'Delete selected idea' },
         { keys: ['Ctrl', 'C'], description: 'Connect ideas (graph view)' },
         { keys: ['Ctrl', 'Enter'], description: 'Quick add note' },
@@ -67,6 +67,7 @@ const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({ open, onC
         { keys: ['2'], description: 'Graph view' },
         { keys: ['3'], description: 'Mind map view' },
         { keys: ['4'], description: 'Analytics' },
+        { keys: ['5'], description: 'Weave (notes woven together)' },
       ]
     }
   ];

@@ -1,9 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import PropTypes from 'prop-types';
+import { Idea } from '../models/Idea';
 import {
-  Box,
-  Paper,
-  Chip,
   IconButton,
   Tooltip,
   Menu,
@@ -23,10 +20,20 @@ import {
   Star as StarIcon,
   StarBorder as StarBorderIcon
 } from '@mui/icons-material';
-import IdeaShareDialog from './IdeaShareDialog.tsx';
-import { Idea } from '../models/Idea.tsx';
+import IdeaShareDialog from './IdeaShareDialog';
 
-const QuickActionsMenu = React.memo(({ 
+interface QuickActionsMenuProps {
+  idea: Idea;
+  onEdit?: (idea: Idea) => void;
+  onDelete?: (id: string) => void;
+  onToggleFavorite?: (id: string) => void;
+  onConnect?: (id: string) => void;
+  onDuplicate?: (idea: Idea) => void;
+  onShare?: () => void;
+  onArchive?: (id: string) => void;
+}
+
+const QuickActionsMenu = React.memo<QuickActionsMenuProps>(({
   idea, 
   onEdit, 
   onDelete, 
@@ -36,11 +43,11 @@ const QuickActionsMenu = React.memo(({
   onShare, 
   onArchive 
 }) => {
-  const [anchorEl, setAnchorEl] = useState(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const open = Boolean(anchorEl);
 
-  const handleClick = (event) => {
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
   };
@@ -49,7 +56,7 @@ const QuickActionsMenu = React.memo(({
     setAnchorEl(null);
   };
 
-  const handleAction = (action) => () => {
+  const handleAction = (action: () => void) => () => {
     action();
     handleClose();
   };
@@ -98,7 +105,7 @@ const QuickActionsMenu = React.memo(({
       action: () => onDelete(idea.id),
       color: 'error.main'
     }
-  ].filter(Boolean)), [idea, onEdit, onToggleFavorite, onConnect, onDuplicate, onShare, onArchive, onDelete]);
+  ].filter((x): x is NonNullable<typeof x> => Boolean(x))), [idea, onEdit, onToggleFavorite, onConnect, onDuplicate, onShare, onArchive, onDelete]);
 
   return (
     <>

@@ -1,13 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   Chip,
   Autocomplete,
-  TextField,
-  Box,
-  Typography,
-  Paper
+  TextField
 } from '@mui/material';
-import { Idea } from '../models/Idea.tsx';
+import { Idea } from '../models/Idea';
 
 interface TagsAutocompleteProps {
   ideas: Idea[];
@@ -37,8 +34,8 @@ const TagsAutocomplete: React.FC<TagsAutocompleteProps> = ({
       freeSolo
       options={allTags}
       value={selectedTags}
-      onChange={(event, newValue) => {
-        onChange(newValue.map(v => typeof v === 'string' ? v : v));
+      onChange={(_event, newValue) => {
+        onChange(newValue.map(v => (typeof v === 'string' ? v : (v as { title?: string }).title ?? '')));
       }}
       renderInput={(params) => (
         <TextField

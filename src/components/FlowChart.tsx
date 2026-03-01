@@ -2,9 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   Box,
   Paper,
-  Typography,
   IconButton,
-  Chip,
   Dialog,
   Tooltip,
   Button,
@@ -13,8 +11,7 @@ import {
   FormControl,
   InputLabel,
   Switch,
-  FormControlLabel,
-  Slider
+  FormControlLabel
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -23,14 +20,12 @@ import {
   Favorite as FavoriteIcon,
   FavoriteBorder as FavoriteBorderIcon,
   AutoGraph as AutoGraphIcon,
-  AccountTree as AccountTreeIcon,
   ZoomIn as ZoomInIcon,
   ZoomOut as ZoomOutIcon,
-  FitScreen as FitScreenIcon,
-  Refresh as RefreshIcon
+  FitScreen as FitScreenIcon
 } from '@mui/icons-material';
-import { Idea } from '../models/Idea.tsx';
-import IdeaForm from './IdeaForm.tsx';
+import { Idea } from '../models/Idea';
+import IdeaForm from './IdeaForm';
 import { motion } from 'framer-motion';
 
 interface FlowChartProps {
@@ -692,6 +687,7 @@ const FlowChart: React.FC<FlowChartProps> = ({
               }}
               onCancel={() => setEditingIdea(null)}
               categories={categories}
+              ideas={ideas}
             />
           </Box>
         )}
@@ -706,7 +702,6 @@ const FlowChart: React.FC<FlowChartProps> = ({
               const centerY = window.innerHeight / 2;
               const adjustedX = (centerX - panOffset.x) / scale;
               const adjustedY = (centerY - panOffset.y) / scale;
-              
               onAddIdea({
                 ...ideaData,
                 position: { x: adjustedX, y: adjustedY }
@@ -715,6 +710,7 @@ const FlowChart: React.FC<FlowChartProps> = ({
             }}
             onCancel={() => setShowForm(false)}
             categories={categories}
+            ideas={ideas}
           />
         </Box>
       </Dialog>

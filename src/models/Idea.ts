@@ -1,10 +1,14 @@
+export const FEELING_OPTIONS = ['excited', 'curious', 'stuck', 'hopeful', 'calm', 'inspired'] as const;
+
 export interface Idea {
   id: string;
   title: string;
   description: string;
   tags: string[];
   category: string;
+  feeling?: string; // Optional mood/energy: excited, curious, stuck, hopeful, calm, inspired
   isFavorite: boolean;
+  isArchived?: boolean;
   createdAt: Date;
   updatedAt: Date;
   notes: Note[];
@@ -27,6 +31,7 @@ export const createEmptyIdea = (): Idea => ({
   tags: [],
   category: 'Uncategorized',
   isFavorite: false,
+  isArchived: false,
   createdAt: new Date(),
   updatedAt: new Date(),
   notes: [],

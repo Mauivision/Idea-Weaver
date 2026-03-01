@@ -1,18 +1,12 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Button,
-  TextField,
   Box,
   Typography,
-  Chip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Switch,
   FormControlLabel
 } from '@mui/material';
@@ -20,7 +14,7 @@ import {
   Archive as ArchiveIcon,
   Unarchive as UnarchiveIcon
 } from '@mui/icons-material';
-import { Idea } from '../models/Idea.tsx';
+import { Idea } from '../models/Idea';
 
 interface ArchiveDialogProps {
   open: boolean;

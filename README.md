@@ -1,76 +1,55 @@
 # Idea Weaver
 
-A modern application for organizing and managing your ideas with both list and mind map visualization.
+**A place for your ideas.** For heavy note takers, daily writers, and dreamers gathering their thoughts.
 
 ## Features
 
-- Create and manage ideas with titles, descriptions, and tags
-- Organize ideas into different categories/collections
-- Search and filter ideas
-- Mark ideas as favorites
-- Add notes and updates to existing ideas
-- Modern, responsive UI
-- Interactive mind map visualization to connect related ideas
-- Local storage persistence
-- Offline functionality
+- **Voice capture** — Web Speech API, instant transcription
+- **Notes Board** — Add, drag, delete notes on a snap-to-grid board
+- **Continue where you left off** — Recent ideas on home for quick jump to list
+- **List view** — Expandable cards, drag reorder, connections, quick category change
+- **Quick filters** — Today, This Week, Favorites, Uncategorized
+- **Duplicate idea** — One-click copy from ⋮ menu
+- **Graph view** — Draggable nodes, connect with Ctrl+C
+- **FlowChart** — Arrow connections, click to unlink
+- **Weave** — Auto summary + optional AI narrative (OpenAI)
+- **Templates** — Pre-built and custom idea templates
+- **Export/Import** — JSON, CSV
+- **Search** — Real-time filter, recent searches
+- **Keyboard shortcuts** — `Ctrl+N` new idea, `Ctrl+K` search, `?` help, `0`–`5` for views
 
-## Mind Map Visualization
+## Setup
 
-The mind map view allows you to:
+```bash
+npm install
+npm start
+```
 
-- Visualize ideas as connected nodes
-- Drag nodes to organize your thoughts spatially
-- Create connections between related ideas
-- See relationships at a glance
-- Add new ideas by clicking anywhere on the canvas
-- Zoom and pan for easy navigation
+Open http://localhost:3000
 
-To switch between list and mind map views, use the toggle buttons in the header.
+## Docs
 
-## Setup Instructions
+| Doc | Purpose |
+|-----|---------|
+| [BOLD-VISION.md](./BOLD-VISION.md) | **Outside-the-box ideas — Serendipity, daily ritual, ideas as living things** |
+| [POPULARITY-ROADMAP.md](./POPULARITY-ROADMAP.md) | How to make Idea Weaver popular — to-do list for growth, shareability & retention |
+| [docs/BUILD-FLOW.md](./docs/BUILD-FLOW.md) | Front / middle / backend flow — what you do vs what AI can build |
+| [docs/PROJECT.md](./docs/PROJECT.md) | Overview, stack, conventions |
+| [docs/ROADMAP.md](./docs/ROADMAP.md) | Roadmap and priorities |
+| [docs/TESTING.md](./docs/TESTING.md) | Testing checklist |
+| [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) | Deploy instructions |
+| [TODO.md](./TODO.md) | Quick task list |
 
-1. Install Node.js (if not already installed)
-   - Download from https://nodejs.org/ (LTS version recommended)
-   - Follow the installation instructions
+## Scripts
 
-2. Install project dependencies
-   ```
-   npm install
-   ```
+```bash
+npm start           # Dev server
+npm run build       # Production build
+npm run serve:build # Serve build locally
+npm run deploy      # Deploy (Vercel)
+npm run test:local  # Local build test (Windows: test-local.bat)
+```
 
-3. Start the development server
-   ```
-   npm start
-   ```
+## Repo
 
-4. Open your browser to http://localhost:3000
-
-## Usage Tips
-
-### List View
-- Use filters and search to quickly find ideas
-- Add tags to categorize your ideas
-- Mark important ideas as favorites
-
-### Mind Map View
-- Click and drag ideas to position them
-- Select an idea and click the link icon to connect to another idea
-- Click on the connection line to remove a connection
-- Use scroll wheel to zoom in/out
-- Click and drag on empty space to pan around
-- Click on any empty area to add a new idea at that location
-
-## Technology Stack
-
-- React with TypeScript
-- Material UI for components
-- Local storage for data persistence
-- Service Worker for offline functionality
-
-## Repository & Test Versions
-
-Test builds and release candidates are stored at:
-
-**https://github.com/Mauivision/Idea-Weaver**
-
-Use that repo to push branches, tags, or test deployments. See `GIT-SETUP.md` for initial git setup and pushing instructions.
+https://github.com/Mauivision/Idea-Weaver

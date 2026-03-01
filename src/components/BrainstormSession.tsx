@@ -6,7 +6,6 @@ import {
   Grid,
   Card,
   CardContent,
-  CardActions,
   Button,
   IconButton,
   Chip,
@@ -15,53 +14,25 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
-  Alert,
   List,
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
-  Divider,
-  LinearProgress,
-  Tabs,
-  Tab,
-  Badge,
-  Avatar,
-  Tooltip,
-  Fab,
   useTheme,
-  useMediaQuery,
-  Stepper,
-  Step,
-  StepLabel,
-  StepContent
+  useMediaQuery
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   PlayArrow as PlayArrowIcon,
   Pause as PauseIcon,
   Stop as StopIcon,
   Timer as TimerIcon,
-  Group as GroupIcon,
-  Lightbulb as LightbulbIcon,
-  Psychology as PsychologyIcon,
-  Schedule as ScheduleIcon,
-  CheckCircle as CheckCircleIcon,
   Refresh as RefreshIcon,
-  Share as ShareIcon,
   Download as DownloadIcon,
-  Visibility as VisibilityIcon,
-  Person as PersonIcon,
-  Note as NoteIcon,
-  TrendingUp as TrendingUpIcon
+  Visibility as VisibilityIcon
 } from '@mui/icons-material';
-import { BrainstormSession, BrainstormTechnique } from '../models/Project.tsx';
-import { Idea } from '../models/Idea.tsx';
+import { BrainstormSession, BrainstormTechnique } from '../models/Project';
+import { Idea } from '../models/Idea';
 
 interface BrainstormSessionProps {
   ideas: Idea[];
@@ -146,12 +117,14 @@ const BRAINSTORM_TECHNIQUES: BrainstormTechnique[] = [
 
 const BrainstormSessionComponent: React.FC<BrainstormSessionProps> = ({ ideas, onAddIdea }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  useMediaQuery(theme.breakpoints.down('sm'));
   const [sessions, setSessions] = useState<BrainstormSession[]>([]);
-  const [currentSession, setCurrentSession] = useState<BrainstormSession | null>(null);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- reserved for future session management
+  const [currentSession] = useState<BrainstormSession | null>(null);
+  const [, setShowCreateDialog] = useState(false);
   const [showTechniqueDialog, setShowTechniqueDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- reserved for future tabs
+  const [, setActiveTab] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [currentTechnique, setCurrentTechnique] = useState<BrainstormTechnique | null>(null);
@@ -260,12 +233,6 @@ const BrainstormSessionComponent: React.FC<BrainstormSessionProps> = ({ ideas, o
       default: return 'default';
     }
   };
-
-  const TabPanel = ({ children, value, index }: { children: React.ReactNode; value: number; index: number }) => (
-    <div hidden={value !== index}>
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
 
   return (
     <Box sx={{ p: 3 }}>

@@ -3,7 +3,6 @@ import {
   Box,
   Paper,
   TextField,
-  Chip,
   List,
   ListItem,
   ListItemButton,
@@ -20,12 +19,18 @@ import {
 
 interface RecentSearchesProps {
   onSearch: (term: string) => void;
+  searchTerm?: string;
+  onSearchChange?: (term: string) => void;
   maxItems?: number;
 }
 
 const RECENT_SEARCHES_KEY = 'ideaWeaver_recentSearches';
 
-const RecentSearches: React.FC<RecentSearchesProps> = ({ onSearch, maxItems = 5 }) => {
+const RecentSearches: React.FC<RecentSearchesProps> = ({ onSearch, searchTerm = '', onSearchChange, maxItems = 5 }) => {
+  const isControlled = onSearchChange != null;
+  const [internalSearch, setInternalSearch] = useState('');
+  const searchInput = isControlled ? searchTerm : internalSearch;
+
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(RECENT_SEARCHES_KEY);
@@ -36,7 +41,6 @@ const RecentSearches: React.FC<RecentSearchesProps> = ({ onSearch, maxItems = 5 
   });
 
   const [showDropdown, setShowDropdown] = useState(false);
-  const [searchInput, setSearchInput] = useState('');
 
   // Save to localStorage whenever recent searches change
   useEffect(() => {
@@ -66,7 +70,8 @@ const RecentSearches: React.FC<RecentSearchesProps> = ({ onSearch, maxItems = 5 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setSearchInput(value);
+    if (isControlled && onSearchChange) onSearchChange(value);
+    else setInternalSearch(value);
     setShowDropdown(value.trim().length === 0 && recentSearches.length > 0);
   };
 
@@ -77,8 +82,9 @@ const RecentSearches: React.FC<RecentSearchesProps> = ({ onSearch, maxItems = 5 
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && searchInput.trim()) {
-      handleSearch(searchInput);
+    if (e.key === 'Enter') {
+      if (searchInput.trim()) handleSearch(searchInput);
+      setShowDropdown(false);
     } else if (e.key === 'Escape') {
       setShowDropdown(false);
     }

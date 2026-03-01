@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Skeleton, Card, CardContent } from '@mui/material';
-import { FadeIn } from './Animations.tsx';
+import { FadeIn } from './Animations';
 
 interface LoadingSkeletonProps {
   count?: number;

@@ -17,7 +17,7 @@ import {
   Link as LinkIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
-import { Idea } from '../models/Idea.tsx';
+import { Idea } from '../models/Idea';
 
 interface SmartLinkingProps {
   ideas: Idea[];

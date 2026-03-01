@@ -1,8 +1,8 @@
 import React from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import { AccountTree as AccountTreeIcon } from '@mui/icons-material';
-import { Idea } from '../models/Idea.ts';
-import { FadeIn } from './Animations.tsx';
+import { Idea } from '../models/Idea';
+import { FadeIn } from './Animations';
 
 interface EnhancedMindMapProps {
   ideas: Idea[];

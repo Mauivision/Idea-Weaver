@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   CssBaseline, 
   ThemeProvider, 
-  createTheme, 
   Container, 
   Box,
   Typography,
@@ -11,68 +10,52 @@ import {
   Snackbar,
   LinearProgress,
   Grow,
+  Chip,
 } from '@mui/material';
-import { useIdeasContext } from './contexts/IdeasContext.tsx';
-import IdeaList from './components/IdeaList.tsx';
-import IdeaGraph from './components/IdeaGraph.tsx';
-import EnhancedHeader from './components/EnhancedHeader.tsx';
-import ProjectManager from './components/ProjectManager.tsx';
-import BrainstormSession from './components/BrainstormSession.tsx';
-import EnhancedMindMap from './components/EnhancedMindMap.tsx';
-import AnalyticsDashboard from './components/AnalyticsDashboard.tsx';
-import FlowChart from './components/FlowChart.tsx';
-import AdvancedSearch from './components/AdvancedSearch.tsx';
-import BulkOperations from './components/BulkOperations.tsx';
-import DataExportImport from './components/DataExportImport.tsx';
-import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp.tsx';
-import LoadingSkeleton from './components/LoadingSkeleton.tsx';
-import DuplicateDetection from './components/DuplicateDetection.tsx';
-import SmartLinking from './components/SmartLinking.tsx';
-import IdeaTemplates from './components/IdeaTemplates.tsx';
-import NoteGridBoard from './components/NoteGridBoard.tsx';
-import ClusterGrid from './components/ClusterGrid.tsx';
-import IdeaFocusWeb from './components/IdeaFocusWeb.tsx';
-import { Idea } from './models/Idea.ts';
-import AutosaveIndicator from './components/AutosaveIndicator.tsx';
-import VoiceInputFab from './components/VoiceInputFab.tsx';
-import { ONBOARDING_FIRST_NOTE_KEY } from './components/OnboardingScreen.tsx';
-
-// Create a theme
-const createAppTheme = (isDark: boolean) => createTheme({
-  palette: {
-    mode: isDark ? 'dark' : 'light',
-    primary: {
-      main: '#2e7d32', // Forest green
-    },
-    secondary: {
-      main: '#f57c00', // Orange
-    },
-    background: {
-      default: isDark ? '#121212' : '#f5f5f5',
-    },
-  },
-  typography: {
-    fontFamily: '"Segoe UI", "Roboto", "Helvetica", "Arial", sans-serif',
-    h1: {
-      fontSize: '2.2rem',
-      fontWeight: 600,
-    },
-    h2: {
-      fontSize: '1.8rem',
-      fontWeight: 500,
-    },
-  },
-});
+import { useIdeasContext } from './contexts/IdeasContext';
+import IdeaList from './components/IdeaList';
+import IdeaGraph from './components/IdeaGraph';
+import EnhancedHeader from './components/EnhancedHeader';
+import ProjectManager from './components/ProjectManager';
+import BrainstormSession from './components/BrainstormSession';
+import EnhancedMindMap from './components/EnhancedMindMap';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
+import FlowChart from './components/FlowChart';
+import AdvancedSearch from './components/AdvancedSearch';
+import BulkOperations from './components/BulkOperations';
+import DataExportImport from './components/DataExportImport';
+import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
+import LoadingSkeleton from './components/LoadingSkeleton';
+import DuplicateDetection from './components/DuplicateDetection';
+import SmartLinking from './components/SmartLinking';
+import IdeaTemplates from './components/IdeaTemplates';
+import NoteGridBoard from './components/NoteGridBoard';
+import ArchiveDialog from './components/ArchiveDialog';
+import IdeaWeave from './components/IdeaWeave';
+import { Idea } from './models/Idea';
+import AutosaveIndicator from './components/AutosaveIndicator';
+import PwaInstallPrompt from './components/PwaInstallPrompt';
+import IdeaSprite, { getEncouragement } from './components/IdeaSprite';
+import VoiceInputFab from './components/VoiceInputFab';
+import { ONBOARDING_FIRST_NOTE_KEY } from './components/OnboardingScreen';
+import { createAppTheme } from './theme';
+import { exportIdeas } from './lib/exportUtils';
+import { getStreak } from './lib/streak';
+import { getSoundOn, setSoundOn } from './lib/sound';
 
 function App() {
   const { 
     ideas, 
+    allIdeas,
+    archivedIdeas,
     loading, 
     error,
     addIdea, 
     updateIdea, 
+    duplicateIdea,
     deleteIdea, 
     toggleFavorite,
+    setIdeaArchived,
     addNote,
     deleteNote,
     updateNote,
@@ -85,13 +68,14 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [quickFilter, setQuickFilter] = useState<'all' | 'today' | 'week' | 'favorites' | 'uncategorized'>('all');
   const [errorOpen, setErrorOpen] = useState(!!error);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'info' | 'warning' | 'error' }>({
     open: false,
     message: '',
     severity: 'info'
   });
-  const [currentViewMode, setCurrentViewMode] = useState<'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'clusters'>('board');
+  const [currentViewMode, setCurrentViewMode] = useState<'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave'>('board');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [advancedSearchResults, setAdvancedSearchResults] = useState<Idea[]>([]);
@@ -100,7 +84,9 @@ function App() {
   const [showSmartLinking, setShowSmartLinking] = useState(true);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [focusedIdeaId, setFocusedIdeaId] = useState<string | null>(null);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [soundOn, setSoundOnState] = useState(getSoundOn);
+  const [spriteMessage, setSpriteMessage] = useState<string | null>(null);
 
   // Update error state when the error changes
   useEffect(() => {
@@ -137,7 +123,7 @@ function App() {
     } else if (justCompleted === 'skipped') {
       setSnackbar({
         open: true,
-        message: 'Welcome to Idea Weaver! Add ideas with + NEW IDEA or use the board.',
+        message: 'Welcome! Add ideas with + NEW IDEA or the board — for note takers, writers, and dreamers.',
         severity: 'info',
       });
     }
@@ -170,6 +156,7 @@ function App() {
     });
     if (newIdea) {
       addNote(newIdea.id, '');
+      setSpriteMessage(getEncouragement());
       showToast('New note block created!', 'success');
     }
   }, [addIdea, addNote, showToast]);
@@ -187,9 +174,27 @@ function App() {
       });
       if (newIdea) {
         addNote(newIdea.id, text);
+        setSpriteMessage(getEncouragement());
       }
     },
     [addIdea, addNote]
+  );
+
+  // Wrappers that show the idea sprite when capturing from the board
+  const addIdeaWithSprite = useCallback(
+    (idea: Parameters<typeof addIdea>[0]) => {
+      const result = addIdea(idea);
+      if (result) setSpriteMessage(getEncouragement());
+      return result;
+    },
+    [addIdea]
+  );
+  const addNoteWithSprite = useCallback(
+    (ideaId: string, content: string, position?: { x: number; y: number }) => {
+      addNote(ideaId, content, position);
+      setSpriteMessage(getEncouragement());
+    },
+    [addNote]
   );
 
   const handleDeleteIdea = (id: string) => {
@@ -209,6 +214,15 @@ function App() {
     }
   };
 
+  const handleConnectIdeas = useCallback((sourceId: string, targetId: string) => {
+    const source = ideas.find(i => i.id === sourceId);
+    const target = ideas.find(i => i.id === targetId);
+    connectIdeas(sourceId, targetId);
+    if (source && target) {
+      showToast(`Ideas connected ✨ "${source.title}" ↔ "${target.title}"`, 'success');
+    }
+  }, [ideas, connectIdeas, showToast]);
+
   const handleAddNoteToIdea = (ideaId: string, content: string) => {
     const idea = ideas.find(i => i.id === ideaId);
     addNote(ideaId, content);
@@ -225,52 +239,8 @@ function App() {
     }
   };
 
-  // Export functionality
   const handleExport = (format: 'json' | 'csv' | 'pdf') => {
-    const timestamp = new Date().toISOString().split('T')[0];
-    const filename = `idea-weaver-export-${timestamp}`;
-
-    switch (format) {
-      case 'json':
-        const jsonData = JSON.stringify(ideas, null, 2);
-        const jsonBlob = new Blob([jsonData], { type: 'application/json' });
-        const jsonUrl = URL.createObjectURL(jsonBlob);
-        const jsonLink = document.createElement('a');
-        jsonLink.href = jsonUrl;
-        jsonLink.download = `${filename}.json`;
-        jsonLink.click();
-        URL.revokeObjectURL(jsonUrl);
-        break;
-
-      case 'csv':
-        const csvHeaders = 'ID,Title,Description,Category,Tags,Favorite,Created,Updated\n';
-        const csvData = ideas.map(idea =>
-          `"${idea.id}","${idea.title}","${idea.description || ''}","${idea.category}","${idea.tags.join(';')}","${idea.isFavorite}","${idea.createdAt.toISOString()}","${idea.updatedAt.toISOString()}"`
-        ).join('\n');
-        const csvContent = csvHeaders + csvData;
-        const csvBlob = new Blob([csvContent], { type: 'text/csv' });
-        const csvUrl = URL.createObjectURL(csvBlob);
-        const csvLink = document.createElement('a');
-        csvLink.href = csvUrl;
-        csvLink.download = `${filename}.csv`;
-        csvLink.click();
-        URL.revokeObjectURL(csvUrl);
-        break;
-
-      case 'pdf':
-        // For PDF export, we'll create a simple text-based PDF-like format
-        const pdfContent = `Idea Weaver Export - ${new Date().toLocaleDateString()}\n\n${ideas.map((idea, index) =>
-          `${index + 1}. ${idea.title}\n   Category: ${idea.category}\n   Description: ${idea.description || 'No description'}\n   Tags: ${idea.tags.join(', ') || 'None'}\n   Favorite: ${idea.isFavorite ? 'Yes' : 'No'}\n   Created: ${idea.createdAt.toLocaleDateString()}\n\n`
-        ).join('')}`;
-        const pdfBlob = new Blob([pdfContent], { type: 'text/plain' });
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        const pdfLink = document.createElement('a');
-        pdfLink.href = pdfUrl;
-        pdfLink.download = `${filename}.txt`;
-        pdfLink.click();
-        URL.revokeObjectURL(pdfUrl);
-        break;
-    }
+    exportIdeas(ideas, format);
   };
 
   // Handle idea reordering in list view
@@ -285,7 +255,7 @@ function App() {
     showToast('Ideas reordered!', 'success');
   }, [updateIdea, showToast]);
 
-  const handleViewModeChange = useCallback((mode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'clusters') => {
+  const handleViewModeChange = useCallback((mode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave') => {
     setCurrentViewMode(mode);
     if (mode === 'list' || mode === 'graph') {
       toggleViewMode();
@@ -300,11 +270,16 @@ function App() {
         return;
       }
 
+      // Ctrl/Cmd + N for new idea
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        handleNewIdeaWithNote();
+      }
       // Ctrl/Cmd + K for search
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         // Focus search input
-        const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
+        const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
         searchInput?.focus();
       }
 
@@ -335,27 +310,40 @@ function App() {
         e.preventDefault();
         handleViewModeChange('analytics');
       }
+      if (e.key === '5' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        handleViewModeChange('weave');
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleViewModeChange]);
+  }, [handleViewModeChange, handleNewIdeaWithNote]);
 
-  // Filter ideas based on search term, category, and favorites
-  const filteredIdeas = useAdvancedSearch 
-    ? advancedSearchResults 
-    : ideas.filter(idea => {
-        const matchesSearch = 
-          idea.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-          (idea.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-          idea.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-        
-        const matchesCategory = categoryFilter === '' || categoryFilter === 'All' || idea.category === categoryFilter;
-        
-        const matchesFavorite = !showFavoritesOnly || idea.isFavorite;
-        
-        return matchesSearch && matchesCategory && matchesFavorite;
-      });
+  // Filter ideas based on search term, category, favorites, and quick filter (memoized)
+  const filteredIdeas = React.useMemo(() => {
+    if (useAdvancedSearch) return advancedSearchResults;
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - 7);
+
+    return ideas.filter(idea => {
+      const matchesSearch =
+        idea.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (idea.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+        idea.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesCategory = categoryFilter === '' || categoryFilter === 'All' || idea.category === categoryFilter;
+      const matchesFavorite = !showFavoritesOnly || idea.isFavorite;
+      const matchesQuick =
+        quickFilter === 'all' ||
+        (quickFilter === 'today' && new Date(idea.updatedAt) >= startOfToday) ||
+        (quickFilter === 'week' && new Date(idea.updatedAt) >= startOfWeek) ||
+        (quickFilter === 'favorites' && idea.isFavorite) ||
+        (quickFilter === 'uncategorized' && (idea.category === 'Uncategorized' || !idea.category));
+      return matchesSearch && matchesCategory && matchesFavorite && matchesQuick;
+    });
+  }, [ideas, searchTerm, categoryFilter, showFavoritesOnly, quickFilter, useAdvancedSearch, advancedSearchResults]);
 
   const handleThemeToggle = () => {
     setIsDarkMode(!isDarkMode);
@@ -444,11 +432,18 @@ function App() {
           onThemeToggle={handleThemeToggle}
           isDarkMode={isDarkMode}
           onExport={handleExport}
+          soundOn={soundOn}
+          onSoundToggle={() => {
+            const next = !soundOn;
+            setSoundOn(next);
+            setSoundOnState(next);
+          }}
+          onOpenArchive={() => setShowArchiveDialog(true)}
         />
         
         {loading && <LinearProgress color="secondary" />}
         
-        <Container maxWidth={currentViewMode === 'list' ? 'lg' : false} disableGutters={currentViewMode === 'board' || currentViewMode === 'graph' || currentViewMode === 'mindmap' || currentViewMode === 'flowchart' || currentViewMode === 'clusters'} sx={{ mt: 2, mb: 4, flexGrow: 1 }}>
+        <Container maxWidth={currentViewMode === 'list' ? 'lg' : false} disableGutters={currentViewMode === 'board' || currentViewMode === 'graph' || currentViewMode === 'mindmap' || currentViewMode === 'flowchart' || currentViewMode === 'weave'} sx={{ mt: 2, mb: 4, flexGrow: 1 }}>
           <Snackbar 
             open={snackbar.open} 
             autoHideDuration={3000} 
@@ -482,36 +477,130 @@ function App() {
           ) : (
             <>
               {currentViewMode === 'board' && (
-                <Box sx={{ height: 'calc(100vh - 140px)', width: '100%' }}>
+                <Box sx={{ width: '100%' }}>
+                  {/* Streak (gentle nudge) */}
+                  {(() => {
+                    const streak = getStreak();
+                    if (!streak || streak.count < 2) return null;
+                    return (
+                      <Box sx={{ px: 2, pt: 0.5, pb: 0 }}>
+                        <Chip
+                          size="small"
+                          label={`${streak.count}-day streak`}
+                          color="primary"
+                          variant="outlined"
+                          sx={{ fontStyle: 'italic' }}
+                        />
+                      </Box>
+                    );
+                  })()}
+                  {/* Daily seed prompt */}
+                  <Box sx={{ px: 2, pt: 1, pb: 0.5 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontFamily: '"Instrument Serif", Georgia, serif',
+                        fontStyle: 'italic',
+                        color: 'text.secondary',
+                        opacity: 0.9,
+                      }}
+                    >
+                      {[
+                        "What's on your mind today?",
+                        "One thing you're curious about.",
+                        "A dream you're holding.",
+                        "What wants to be written?",
+                        "Something you don't want to forget.",
+                      ][new Date().getDay() % 5]}
+                    </Typography>
+                  </Box>
+                  {/* Continue where you left off + Surprise me */}
+                  {ideas.length > 0 && (
+                    <Box sx={{ px: 2, pt: 0.5, pb: 1 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                        Continue where you left off
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
+                        {[...ideas]
+                          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+                          .slice(0, 5)
+                          .map((idea) => (
+                            <Chip
+                              key={idea.id}
+                              label={idea.title}
+                              size="small"
+                              variant="outlined"
+                              onClick={() => {
+                                setCurrentViewMode('list');
+                                setSearchTerm('');
+                              }}
+                              sx={{ cursor: 'pointer' }}
+                            />
+                          ))}
+                        {/* Surprise me — surface a forgotten idea */}
+                        {ideas.length > 3 && (() => {
+                          const sevenDaysAgo = new Date();
+                          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                          const forgotten = ideas.filter((i) => new Date(i.updatedAt) < sevenDaysAgo);
+                          const fromForgotten = forgotten.length > 0;
+                          const pool = fromForgotten ? forgotten : ideas;
+                          const pick = pool[Math.floor(Math.random() * pool.length)];
+                          return (
+                            <Chip
+                              key="surprise"
+                              label="Surprise me"
+                              size="small"
+                              color="secondary"
+                              variant="outlined"
+                              onClick={() => {
+                                setCurrentViewMode('list');
+                                setSearchTerm(pick.title);
+                                showToast(
+                                  fromForgotten
+                                    ? `"${pick.title}" — you haven't looked at this in a while ✨`
+                                    : `"${pick.title}"`,
+                                  'info'
+                                );
+                              }}
+                              sx={{ cursor: 'pointer' }}
+                            />
+                          );
+                        })()}
+                      </Box>
+                    </Box>
+                  )}
+                  <Box sx={{ height: ideas.length > 0 ? 'calc(100vh - 220px)' : 'calc(100vh - 140px)', width: '100%' }}>
                   <NoteGridBoard
                     ideas={ideas}
-                    addNote={addNote}
+                    addNote={addNoteWithSprite}
                     deleteNote={deleteNote}
                     updateNote={updateNote}
-                    addIdea={addIdea}
-                    onAddConnection={connectIdeas}
-                    onRemoveConnection={handleDisconnectIdeas}
+                    addIdea={addIdeaWithSprite}
                   />
-                </Box>
-              )}
-
-              {currentViewMode === 'clusters' && (
-                <Box sx={{ height: 'calc(100vh - 140px)', width: '100%' }}>
-                  <ClusterGrid
-                    ideas={ideas}
-                    onUpdate={updateIdea}
-                    onDelete={handleDeleteIdea}
-                    onToggleFavorite={toggleFavorite}
-                    onAddIdea={addIdea}
-                    onAddNote={handleAddNoteToIdea}
-                    categories={categories.filter(cat => cat !== 'All')}
-                    onFocusIdea={setFocusedIdeaId}
-                  />
+                  </Box>
                 </Box>
               )}
 
               {currentViewMode === 'list' && (
                 <>
+                  {/* Quick filters */}
+                  <Box sx={{ px: 2, mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {(['all', 'today', 'week', 'favorites', 'uncategorized'] as const).map((key) => (
+                      <Chip
+                        key={key}
+                        label={
+                          key === 'all' ? 'All' :
+                          key === 'today' ? 'Today' :
+                          key === 'week' ? 'This Week' :
+                          key === 'favorites' ? 'Favorites' : 'Uncategorized'
+                        }
+                        onClick={() => setQuickFilter(key)}
+                        color={quickFilter === key ? 'primary' : 'default'}
+                        variant={quickFilter === key ? 'filled' : 'outlined'}
+                        size="small"
+                      />
+                    ))}
+                  </Box>
                   {/* Advanced Search */}
                   <Box sx={{ px: 2, mb: 2 }}>
                     <AdvancedSearch
@@ -529,7 +618,7 @@ function App() {
                     <Box sx={{ px: 2, mb: 2 }}>
                       <SmartLinking
                         ideas={filteredIdeas}
-                        onConnect={connectIdeas}
+                        onConnect={handleConnectIdeas}
                         onDismiss={() => setShowSmartLinking(false)}
                       />
                     </Box>
@@ -551,7 +640,7 @@ function App() {
                   {filteredIdeas.length === 0 ? (
                     <Paper elevation={2} sx={{ p: 4, textAlign: 'center', mx: 2 }}>
                       <Typography variant="h6" color="textSecondary">
-                        No ideas found. Create a new idea to get started!
+                        No ideas found yet. Add a note, a thought, or a dream — then watch them gather here.
                       </Typography>
                     </Paper>
                   ) : (
@@ -564,6 +653,10 @@ function App() {
                       <IdeaList
                         ideas={filteredIdeas}
                         onUpdate={updateIdea}
+                        onDuplicate={(idea) => {
+                          duplicateIdea(idea);
+                          showToast(`"${idea.title}" duplicated`, 'success');
+                        }}
                         onDelete={handleDeleteIdea}
                         onToggleFavorite={toggleFavorite}
                         onAddNote={handleAddNoteToIdea}
@@ -586,7 +679,7 @@ function App() {
                     onUpdate={updateIdea}
                     onDelete={handleDeleteIdea}
                     onToggleFavorite={toggleFavorite}
-                    onAddConnection={connectIdeas}
+                    onAddConnection={handleConnectIdeas}
                     onRemoveConnection={handleDisconnectIdeas}
                     onMoveIdea={updateIdeaPosition}
                     categories={categories.filter(cat => cat !== 'All')}
@@ -629,6 +722,14 @@ function App() {
                 <AnalyticsDashboard ideas={ideas} />
               )}
 
+              {currentViewMode === 'weave' && (
+                <IdeaWeave
+                  ideas={filteredIdeas}
+                  onUpdateIdea={updateIdea}
+                  showToast={(msg, severity) => setSnackbar({ open: true, message: msg, severity })}
+                />
+              )}
+
               {currentViewMode === 'flowchart' && (
                 <Box sx={{ height: 'calc(100vh - 140px)', width: '100%' }}>
                   <FlowChart
@@ -636,7 +737,7 @@ function App() {
                     onUpdate={updateIdea}
                     onDelete={handleDeleteIdea}
                     onToggleFavorite={toggleFavorite}
-                    onAddConnection={connectIdeas}
+                    onAddConnection={handleConnectIdeas}
                     onRemoveConnection={handleDisconnectIdeas}
                     onMoveIdea={updateIdeaPosition}
                     categories={categories.filter(cat => cat !== 'All')}
@@ -647,28 +748,6 @@ function App() {
             </>
           )}
         </Container>
-        
-        {/* Focus Web overlay */}
-        {focusedIdeaId && (() => {
-          const focusedIdea = ideas.find(i => i.id === focusedIdeaId);
-          if (!focusedIdea) return null;
-          return (
-            <Box sx={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1100, bgcolor: 'background.default' }}>
-              <IdeaFocusWeb
-                idea={focusedIdea}
-                allIdeas={ideas}
-                onBack={() => setFocusedIdeaId(null)}
-                onUpdate={updateIdea}
-                onToggleFavorite={toggleFavorite}
-                onAddNote={handleAddNoteToIdea}
-                onDeleteNote={handleDeleteNoteFromIdea}
-                onAddConnection={connectIdeas}
-                onRemoveConnection={(s, t) => { disconnectIdeas(s, t); }}
-                onFocusIdea={setFocusedIdeaId}
-              />
-            </Box>
-          );
-        })()}
 
         {/* Keyboard Shortcuts Help Dialog */}
         <KeyboardShortcutsHelp
@@ -698,7 +777,16 @@ function App() {
           onDelete={handleDeleteIdea}
         />
 
+        {/* Idea sprite: brief encouragement when you capture an idea */}
+        <IdeaSprite
+          message={spriteMessage}
+          onDismiss={() => setSpriteMessage(null)}
+          duration={4}
+          isDark={isDarkMode}
+        />
+
         {/* Voice input FAB */}
+        <PwaInstallPrompt />
         <VoiceInputFab onTranscript={handleVoiceTranscript} showToast={showToast} />
 
         {/* Data Export/Import Button */}
@@ -712,11 +800,20 @@ function App() {
         {/* Autosave Indicator */}
         <AutosaveIndicator isSaving={isSaving} lastSaved={lastSaved} />
         
-        <Box component="footer" sx={{ bgcolor: 'background.paper', py: 2, textAlign: 'center' }}>
+        <Box component="footer" sx={{ bgcolor: 'background.paper', py: 2, textAlign: 'center', borderTop: '1px solid', borderColor: 'divider' }}>
           <Typography variant="body2" color="text.secondary">
-            © {new Date().getFullYear()} Idea Weaver - Organize your thoughts and inspiration
+            Idea Weaver — for note takers, writers, and dreamers. © {new Date().getFullYear()}
           </Typography>
         </Box>
+
+        <ArchiveDialog
+          open={showArchiveDialog}
+          ideas={allIdeas}
+          archivedIdeas={new Set(archivedIdeas.map((i) => i.id))}
+          onArchive={(ids) => ids.forEach((id) => setIdeaArchived(id, true))}
+          onUnarchive={(ids) => ids.forEach((id) => setIdeaArchived(id, false))}
+          onClose={() => setShowArchiveDialog(false)}
+        />
       </Box>
     </ThemeProvider>
   );

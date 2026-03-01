@@ -21,7 +21,7 @@ import {
   Close as CloseIcon,
   Description as DescriptionIcon
 } from '@mui/icons-material';
-import { Idea } from '../models/Idea.tsx';
+import { Idea } from '../models/Idea';
 
 interface DataExportImportProps {
   ideas: Idea[];

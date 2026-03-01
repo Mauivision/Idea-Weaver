@@ -23,8 +23,8 @@ import {
   ArrowRightAlt as ArrowRightAltIcon,
   LinkOff as UnlinkIcon
 } from '@mui/icons-material';
-import { Idea } from '../models/Idea.tsx';
-import IdeaForm from './IdeaForm.tsx';
+import { Idea } from '../models/Idea';
+import IdeaForm from './IdeaForm';
 
 interface IdeaNodeProps {
   idea: Idea;
@@ -396,9 +396,6 @@ const Edge: React.FC<EdgeProps> = React.memo(({ start, end, isSelected, onClick,
   const controlX = midX + offsetX;
   const controlY = midY + offsetY;
 
-  // Calculate angle for proper arrow orientation
-  const angle = Math.atan2(dy, dx);
-
   return (
     <svg
       style={{
@@ -690,13 +687,39 @@ const IdeaGraph: React.FC<IdeaGraphProps> = ({
     }
   };
 
+  // Start connecting from the selected idea (defined before handleKeyDown)
+  const startConnecting = useCallback(() => {
+    if (selectedIdea) {
+      setConnectingFrom(selectedIdea);
+    }
+  }, [selectedIdea]);
+
+  // Center the view on all ideas (defined before handleKeyDown)
+  const centerView = useCallback(() => {
+    if (ideas.length === 0 || !graphRef.current) return;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    ideas.forEach(idea => {
+      const pos = idea.position || { x: 0, y: 0 };
+      minX = Math.min(minX, pos.x);
+      minY = Math.min(minY, pos.y);
+      maxX = Math.max(maxX, pos.x);
+      maxY = Math.max(maxY, pos.y);
+    });
+    const width = graphRef.current.clientWidth;
+    const height = graphRef.current.clientHeight;
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    setPanOffset({
+      x: width / 2 - centerX * scale,
+      y: height / 2 - centerY * scale
+    });
+  }, [ideas, scale]);
+
   // Keyboard shortcuts for better UX
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    // Prevent shortcuts during input focus
     if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
       return;
     }
-
     switch (event.key) {
       case 'Delete':
       case 'Backspace':
@@ -709,9 +732,7 @@ const IdeaGraph: React.FC<IdeaGraphProps> = ({
       case 'c':
         if (event.ctrlKey || event.metaKey) {
           event.preventDefault();
-          if (selectedIdea) {
-            startConnecting();
-          }
+          if (selectedIdea) startConnecting();
         }
         break;
       case 'Escape':
@@ -735,9 +756,8 @@ const IdeaGraph: React.FC<IdeaGraphProps> = ({
         setScale(prev => Math.max(prev * 0.8, 0.2));
         break;
     }
-  }, [selectedIdea, connectingFrom, onDelete, startConnecting, centerView]);
+  }, [selectedIdea, onDelete, startConnecting, centerView]);
 
-  // Add keyboard event listener
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
@@ -755,13 +775,6 @@ const IdeaGraph: React.FC<IdeaGraphProps> = ({
       setSelectedIdea(id === selectedIdea ? null : id);
     }
   };
-
-  // Start connecting from the selected idea
-  const startConnecting = useCallback(() => {
-    if (selectedIdea) {
-      setConnectingFrom(selectedIdea);
-    }
-  }, [selectedIdea]);
 
   // Remove a connection
   const removeConnection = (sourceId: string, targetId: string) => {
@@ -832,36 +845,6 @@ const IdeaGraph: React.FC<IdeaGraphProps> = ({
     centerView();
   };
   
-  // Center the view on all ideas
-  const centerView = useCallback(() => {
-    if (ideas.length === 0 || !graphRef.current) return;
-
-    // Calculate bounding box of all ideas
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-    ideas.forEach(idea => {
-      const pos = idea.position || { x: 0, y: 0 };
-      minX = Math.min(minX, pos.x);
-      minY = Math.min(minY, pos.y);
-      maxX = Math.max(maxX, pos.x);
-      maxY = Math.max(maxY, pos.y);
-    });
-
-    const width = graphRef.current.clientWidth;
-    const height = graphRef.current.clientHeight;
-
-    // Calculate the center of the bounding box
-    const centerX = (minX + maxX) / 2;
-    const centerY = (minY + maxY) / 2;
-
-    // Set the pan offset to center the bounding box
-    setPanOffset({
-      x: width / 2 - centerX * scale,
-      y: height / 2 - centerY * scale
-    });
-  }, [ideas, scale]);
-  
-
   return (
     <Box
       sx={{ position: 'relative', height: '100%', overflow: 'hidden' }}
@@ -1130,6 +1113,7 @@ const IdeaGraph: React.FC<IdeaGraphProps> = ({
               }}
               onCancel={() => setEditingIdea(null)}
               categories={categories}
+              ideas={ideas}
             />
           </Box>
         )}
@@ -1140,12 +1124,12 @@ const IdeaGraph: React.FC<IdeaGraphProps> = ({
         <Box sx={{ p: 2 }}>
           <IdeaForm
             onSubmit={(newIdeaData) => {
-              // The position will be handled by handleAddIdea's closure
               onAddIdea(newIdeaData);
               setShowForm(false);
             }}
             onCancel={() => setShowForm(false)}
             categories={categories}
+            ideas={ideas}
           />
         </Box>
       </Dialog>

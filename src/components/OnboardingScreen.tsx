@@ -3,32 +3,26 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 const ONBOARDING_STORAGE_KEY = 'ideaWeaverOnboardingCompleted';
 export const ONBOARDING_FIRST_NOTE_KEY = 'ideaWeaverOnboardingFirstNote';
 
-// SpeechRecognition types (Web Speech API)
+// Web Speech API types (shared via Window augmentation below)
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList;
   resultIndex: number;
 }
-
 interface SpeechRecognitionErrorEvent extends Event {
   error: string;
   message?: string;
 }
-
 interface SpeechRecognition extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
   start(): void;
   stop(): void;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onresult: ((e: SpeechRecognitionEvent) => void) | null;
+  onerror: ((e: SpeechRecognitionErrorEvent) => void) | null;
   onend: (() => void) | null;
   onstart: (() => void) | null;
-  onaudiostart: (() => void) | null;
-  onsoundstart: (() => void) | null;
-  onspeechstart: (() => void) | null;
 }
-
 declare global {
   interface Window {
     SpeechRecognition?: new () => SpeechRecognition;
@@ -231,22 +225,26 @@ function OnboardingScreen({ onComplete, showToast }: OnboardingScreenProps) {
 
   const styles = isDark
     ? {
-        bg: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
-        color: '#f1f5f9',
-        subColor: '#94a3b8',
-        cardBg: 'rgba(30, 41, 59, 0.8)',
-        border: '#334155',
-        inputBg: '#1e293b',
+        bg: 'linear-gradient(180deg, #0c0a09 0%, #1c1917 50%, #292524 100%)',
+        color: '#fafaf9',
+        subColor: '#a8a29e',
+        cardBg: 'rgba(28, 25, 23, 0.95)',
+        border: '#292524',
+        inputBg: '#1c1917',
         errorColor: '#f87171',
+        accent: '#2dd4bf',
+        warm: '#fbbf24',
       }
     : {
-        bg: 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)',
-        color: '#0f172a',
-        subColor: '#475569',
-        cardBg: 'rgba(255, 255, 255, 0.9)',
-        border: '#cbd5e1',
-        inputBg: '#ffffff',
-        errorColor: '#dc2626',
+        bg: 'linear-gradient(180deg, #faf6f0 0%, #f5efe6 50%, #ede6dc 100%)',
+        color: '#1c1917',
+        subColor: '#57534e',
+        cardBg: 'rgba(255, 254, 251, 0.92)',
+        border: '#e8e2da',
+        inputBg: '#fffefb',
+        errorColor: '#b91c1c',
+        accent: '#9c7c5c',
+        warm: '#b45309',
       };
 
   return (
@@ -261,32 +259,47 @@ function OnboardingScreen({ onComplete, showToast }: OnboardingScreenProps) {
         boxSizing: 'border-box',
         opacity: isTransitioning ? 0 : 1,
         transition: 'opacity 0.5s ease-out',
-        fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        fontFamily: '"Outfit", "Segoe UI", system-ui, sans-serif',
         background: styles.bg,
         color: styles.color,
       }}
     >
       <h1
         style={{
-          fontSize: 'clamp(1.75rem, 5vw, 2.5rem)',
+          fontFamily: '"Literata", "Outfit", Georgia, serif',
+          fontSize: 'clamp(1.85rem, 5vw, 2.6rem)',
           fontWeight: 600,
           textAlign: 'center',
           marginBottom: 12,
           lineHeight: 1.3,
+          letterSpacing: '-0.02em',
         }}
       >
-        Welcome to Idea Weaver
+        Your first idea
       </h1>
       <p
         style={{
           fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)',
           color: styles.subColor,
           textAlign: 'center',
-          marginBottom: 32,
-          maxWidth: 560,
+          marginBottom: 8,
+          maxWidth: 520,
+          lineHeight: 1.6,
         }}
       >
-        Capture ideas instantly — speak or type, organize visually. Unlock sync across devices for $1.99 one-time.
+        For note takers, daily writers, and dreamers. A place where your ideas gather and grow.
+      </p>
+      <p
+        style={{
+          fontSize: '0.85rem',
+          color: styles.subColor,
+          textAlign: 'center',
+          marginBottom: 32,
+          maxWidth: 400,
+          opacity: 0.9,
+        }}
+      >
+        No account required. Unlock sync across devices anytime for $1.99.
       </p>
 
       {(!isSupported || showTypeInput) ? (
@@ -298,32 +311,52 @@ function OnboardingScreen({ onComplete, showToast }: OnboardingScreenProps) {
           )}
           <form onSubmit={handleTextSubmit}>
             <textarea
-              placeholder="Type your idea here..."
+              placeholder="What's on your mind?"
               style={{
                 width: '100%',
-                minHeight: 100,
-                padding: 16,
+                minHeight: 120,
+                padding: 18,
                 borderRadius: 12,
                 border: `1px solid ${styles.border}`,
                 background: styles.inputBg,
                 color: styles.color,
                 fontSize: 16,
+                lineHeight: 1.5,
                 resize: 'vertical',
+                fontFamily: 'inherit',
+                transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = styles.accent;
+                e.target.style.boxShadow = `0 0 0 2px ${styles.accent}20`;
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = styles.border;
+                e.target.style.boxShadow = 'none';
               }}
             />
             <button
               type="submit"
               style={{
-                marginTop: 12,
+                marginTop: 16,
                 width: '100%',
                 padding: '14px 28px',
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: 600,
                 border: 'none',
                 borderRadius: 12,
-                background: '#3b82f6',
+                background: styles.accent,
                 color: 'white',
                 cursor: 'pointer',
+                transition: 'transform 0.15s ease, box-shadow 0.2s ease',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = `0 6px 20px ${styles.accent}40`;
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
               }}
             >
               Add my first idea
@@ -360,7 +393,7 @@ function OnboardingScreen({ onComplete, showToast }: OnboardingScreenProps) {
             cursor: 'pointer',
           }}
         >
-          Use without sync – explore the app
+          Explore without sync
         </button>
         </div>
       ) : (
@@ -370,18 +403,18 @@ function OnboardingScreen({ onComplete, showToast }: OnboardingScreenProps) {
               onClick={handleStartStop}
               style={{
                 padding: '16px 40px',
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: 600,
                 border: 'none',
                 borderRadius: 12,
-                background: isListening ? '#dc2626' : '#3b82f6',
-                color: 'white',
+                background: isListening ? styles.warm : styles.accent,
+                color: isDark ? '#0c0a09' : 'white',
                 cursor: 'pointer',
-                boxShadow: isListening ? '0 0 20px rgba(220, 38, 38, 0.4)' : '0 4px 14px rgba(59, 130, 246, 0.4)',
-                transition: 'all 0.2s ease',
+                boxShadow: isListening ? `0 0 24px ${styles.warm}50` : `0 4px 16px ${styles.accent}35`,
+                transition: 'all 0.25s ease',
               }}
             >
-              {isListening ? 'Listening...' : 'Start with Voice'}
+              {isListening ? 'Listening…' : 'Start with voice'}
             </button>
             <button
               type="button"
@@ -505,7 +538,7 @@ function OnboardingScreen({ onComplete, showToast }: OnboardingScreenProps) {
               textDecoration: 'none',
             }}
           >
-            Use without sync – explore the app
+            Explore without sync
           </button>
         </>
       )}

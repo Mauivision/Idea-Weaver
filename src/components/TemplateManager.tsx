@@ -20,19 +20,7 @@ import {
   InputLabel,
   Select,
   Alert,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  Divider,
-  Tabs,
-  Tab,
-  Badge,
-  Avatar,
   Tooltip,
-  useTheme,
-  useMediaQuery,
-  Rating,
   Switch,
   FormControlLabel
 } from '@mui/material';
@@ -40,12 +28,6 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Visibility as VisibilityIcon,
-  Download as DownloadIcon,
-  Upload as UploadIcon,
-  Share as ShareIcon,
-  Star as StarIcon,
-  StarBorder as StarBorderIcon,
   ContentCopy as ContentCopyIcon,
   Psychology as PsychologyIcon,
   Assignment as AssignmentIcon,
@@ -56,20 +38,17 @@ import {
   Schedule as ScheduleIcon,
   Person as PersonIcon
 } from '@mui/icons-material';
-import { Template } from '../models/Project.tsx';
+import { Template } from '../models/Project';
 
 interface TemplateManagerProps {
   onApplyTemplate: (template: Template) => void;
 }
 
 const TemplateManager: React.FC<TemplateManagerProps> = ({ onApplyTemplate }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
+  const [, setShowEditDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -233,12 +212,6 @@ const TemplateManager: React.FC<TemplateManagerProps> = ({ onApplyTemplate }) =>
     };
     setTemplates(prev => [...prev, newTemplate]);
   };
-
-  const TabPanel = ({ children, value, index }: { children: React.ReactNode; value: number; index: number }) => (
-    <div hidden={value !== index}>
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
 
   return (
     <Box sx={{ p: 3 }}>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Fade, CircularProgress, Tooltip } from '@mui/material';
 import { CheckCircle } from '@mui/icons-material';
-import { popIn } from './Animations.tsx';
+import { popIn } from './Animations';
 
 interface AutosaveIndicatorProps {
   isSaving?: boolean;

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -19,11 +19,10 @@ import {
 } from '@mui/material';
 import {
   Edit as EditIcon,
-  Label as LabelIcon,
   Delete as DeleteIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
-import { Idea } from '../models/Idea.tsx';
+import { Idea } from '../models/Idea';
 
 interface BulkOperationsProps {
   selectedIdeas: Set<string>;

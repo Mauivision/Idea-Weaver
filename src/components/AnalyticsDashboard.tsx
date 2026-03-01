@@ -20,7 +20,7 @@ import {
   Favorite as FavoriteIcon,
   AccessTime as AccessTimeIcon
 } from '@mui/icons-material';
-import { Idea } from '../models/Idea.tsx';
+import { Idea } from '../models/Idea';
 
 interface AnalyticsDashboardProps {
   ideas: Idea[];

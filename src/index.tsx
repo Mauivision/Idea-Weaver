@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.tsx';
-import OnboardingScreen, { ONBOARDING_STORAGE_KEY } from './components/OnboardingScreen.tsx';
-import { IdeasProvider } from './contexts/IdeasContext.tsx';
-import * as serviceWorker from './serviceWorker.ts';
+import App from './App';
+import OnboardingScreen, { ONBOARDING_STORAGE_KEY } from './components/OnboardingScreen';
+import { IdeasProvider } from './contexts/IdeasContext';
+import * as serviceWorker from './serviceWorker';
 
 // Backwards compatibility: migrate old key
 function hasCompletedOnboarding(): boolean {

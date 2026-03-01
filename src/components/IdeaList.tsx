@@ -24,25 +24,27 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  useTheme,
 } from '@mui/material';
 import { 
   Delete as DeleteIcon, 
-  Edit as EditIcon, 
   Favorite as FavoriteIcon, 
   FavoriteBorder as FavoriteBorderIcon,
   ExpandMore as ExpandMoreIcon,
   Add as AddIcon,
   LinkOff as LinkOffIcon,
 } from '@mui/icons-material';
-import { Idea } from '../models/Idea.tsx';
-import IdeaForm from './IdeaForm.tsx';
-import { useDragAndDrop } from '../hooks/useDragAndDrop.ts';
-import QuickActionsMenu from './QuickActionsMenu.tsx';
-import { FadeIn } from './Animations.tsx';
+import { Idea } from '../models/Idea';
+import IdeaForm from './IdeaForm';
+import { useDragAndDrop } from '../hooks/useDragAndDrop';
+import QuickActionsMenu from './QuickActionsMenu';
+import { hapticLight } from '../lib/haptics';
+import { FadeIn, pulseGlow } from './Animations';
 
 interface IdeaListProps {
   ideas: Idea[];
   onUpdate: (idea: Idea) => void;
+  onDuplicate?: (idea: Idea) => void;
   onDelete: (id: string) => void;
   onToggleFavorite: (id: string) => void;
   onAddNote: (ideaId: string, content: string) => void;
@@ -59,6 +61,7 @@ interface IdeaListProps {
 const IdeaList: React.FC<IdeaListProps> = React.memo(({
   ideas,
   onUpdate,
+  onDuplicate,
   onDelete,
   onToggleFavorite,
   onAddNote,
@@ -69,13 +72,16 @@ const IdeaList: React.FC<IdeaListProps> = React.memo(({
   selectedIdeas: externalSelectedIdeas,
   onSelectionChange
 }) => {
+  const theme = useTheme();
   // Local state for editing, deletion, notes, expansion, and selection
   const [editingIdea, setEditingIdea] = useState<Idea | null>(null);
   const [connectionsMenuAnchor, setConnectionsMenuAnchor] = useState<{ el: HTMLElement; idea: Idea } | null>(null);
+  const [categoryMenuAnchor, setCategoryMenuAnchor] = useState<{ el: HTMLElement; idea: Idea } | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [ideaToDelete, setIdeaToDelete] = useState<string | null>(null);
   const [newNoteContent, setNewNoteContent] = useState<{ [key: string]: string }>({});
   const [expandedIdea, setExpandedIdea] = useState<string | null>(null);
+  const [pulsedIdeaId, setPulsedIdeaId] = useState<string | null>(null);
   const [selectedIdeas, setSelectedIdeas] = useState<Set<string>>(externalSelectedIdeas || new Set());
 
   // Auto-expand newly created ideas with empty notes
@@ -148,7 +154,10 @@ const IdeaList: React.FC<IdeaListProps> = React.memo(({
   const handleAddNote = useCallback((ideaId: string) => {
     const content = newNoteContent[ideaId]?.trim();
     if (content) {
+      hapticLight();
       onAddNote(ideaId, content);
+      setPulsedIdeaId(ideaId);
+      setTimeout(() => setPulsedIdeaId(null), 1200);
       setNewNoteContent(prev => ({
         ...prev,
         [ideaId]: ''
@@ -164,11 +173,29 @@ const IdeaList: React.FC<IdeaListProps> = React.memo(({
     });
   }, []);
 
+  const handleGridClick = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('[data-idea-card]')) return;
+    updateSelection(new Set());
+  }, [updateSelection]);
+
+  // Time-aware state: Sleeping (7+ days), Warm (recent), Growing (notes added recently)
+  const getIdeaState = useCallback((idea: Idea): 'sleeping' | 'warm' | 'growing' | null => {
+    const now = Date.now();
+    const updated = new Date(idea.updatedAt).getTime();
+    const daysSinceUpdate = (now - updated) / (24 * 60 * 60 * 1000);
+    const notesAdded = idea.notes.length > 0;
+    const grewRecently = notesAdded && (now - new Date(idea.notes[idea.notes.length - 1].createdAt).getTime()) < 48 * 60 * 60 * 1000;
+    if (daysSinceUpdate >= 7) return 'sleeping';
+    if (grewRecently) return 'growing';
+    if (daysSinceUpdate < 2) return 'warm';
+    return null;
+  }, []);
+
   return (
     <>
       {/* Selection indicator */}
       {selectedIdeas.size > 0 && (
-        <Box sx={{ mb: 2, p: 1, bgcolor: 'primary.main', color: 'primary.contrastText', borderRadius: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ mb: 2, p: 1, bgcolor: 'primary.main', color: 'primary.contrastText', borderRadius: 0.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="body2">
             {selectedIdeas.size} note{selectedIdeas.size > 1 ? 's' : ''} selected
           </Typography>
@@ -201,6 +228,7 @@ const IdeaList: React.FC<IdeaListProps> = React.memo(({
           const dragged = isDragged(idea.id);
           const dragOver = isDragOver(idea.id);
           const insertPosition = getInsertPosition(idea.id);
+          const ideaState = getIdeaState(idea);
           
           return (
             <FadeIn key={idea.id} delay={index * 50}>
@@ -225,6 +253,7 @@ const IdeaList: React.FC<IdeaListProps> = React.memo(({
                 )}
                 
                 <Card
+                  data-idea-card
                   elevation={selectedIdeas.has(idea.id) ? 8 : dragOver ? 8 : dragged ? 4 : 2}
                   sx={{
                     height: '100%',
@@ -244,23 +273,28 @@ const IdeaList: React.FC<IdeaListProps> = React.memo(({
                     backfaceVisibility: 'hidden',
                     WebkitTransform: 'translateZ(0)', // Safari hack
                     border: selectedIdeas.has(idea.id)
-                      ? '2px solid #9c27b0'
+                      ? `2px solid ${theme.palette.primary.main}`
                       : dragOver
-                        ? '2px solid #4caf50'
-                        : 'none',
+                        ? `2px solid ${theme.palette.success.main}`
+                        : ideaState === 'sleeping'
+                          ? '1px solid rgba(0,0,0,0.06)'
+                          : ideaState === 'growing'
+                            ? '1px solid rgba(34,197,94,0.35)'
+                            : 'none',
                     backgroundColor: selectedIdeas.has(idea.id)
-                      ? 'rgba(156, 39, 176, 0.1)'
+                      ? 'rgba(0,0,0,0.03)'
                       : dragOver
-                        ? 'rgba(76, 175, 80, 0.1)'
+                        ? 'rgba(34,197,94,0.04)'
                         : 'inherit',
                     boxShadow: selectedIdeas.has(idea.id)
-                      ? '0 8px 25px rgba(156, 39, 176, 0.3)'
+                      ? '0 2px 12px rgba(0,0,0,0.12)'
                       : dragOver
-                        ? '0 8px 25px rgba(76, 175, 80, 0.3)'
-                        : '0 2px 8px rgba(0, 0, 0, 0.1)',
+                        ? '0 2px 12px rgba(0,0,0,0.1)'
+                        : '0 1px 3px rgba(0,0,0,0.06)',
+                    animation: pulsedIdeaId === idea.id ? `${pulseGlow} 1.2s ease-out` : 'none',
                     '&:hover': {
-                      transform: dragged ? 'none' : 'scale(1.01) translateY(-1px) translateZ(0)',
-                      boxShadow: dragged ? 'none' : '0 4px 15px rgba(0, 0, 0, 0.15)',
+                      transform: dragged ? 'none' : 'scale(1.005) translateY(-1px) translateZ(0)',
+                      boxShadow: dragged ? 'none' : '0 2px 8px rgba(0,0,0,0.08)',
                       transition: dragged ? 'none' : 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     }
                   }}
@@ -271,7 +305,7 @@ const IdeaList: React.FC<IdeaListProps> = React.memo(({
                   }}
                   onDragEnd={(e) => {
                     e.stopPropagation();
-                    handleDragEnd();
+                    handleDragEnd(e);
                   }}
                   onDragOver={(e) => {
                     e.stopPropagation();
@@ -328,7 +362,11 @@ const IdeaList: React.FC<IdeaListProps> = React.memo(({
                       size="small"
                       color="primary"
                       variant="outlined" 
-                      sx={{ mb: 1 }}
+                      sx={{ mb: 1, cursor: 'pointer' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCategoryMenuAnchor({ el: e.currentTarget as HTMLElement, idea });
+                      }}
                     />
                     <Typography variant="body2" color="text.secondary" gutterBottom>
                       Created: {formatDate(idea.createdAt)}
@@ -548,25 +586,37 @@ const IdeaList: React.FC<IdeaListProps> = React.memo(({
                           )}
                         </>
                       )}
+                      {/* Category quick-change menu */}
+                      {categoryMenuAnchor?.idea.id === idea.id && (
+                        <Menu
+                          anchorEl={categoryMenuAnchor.el}
+                          open={!!categoryMenuAnchor}
+                          onClose={() => setCategoryMenuAnchor(null)}
+                          onClick={(e) => e.stopPropagation()}
+                          anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
+                          transformOrigin={{ horizontal: 'left', vertical: 'top' }}
+                        >
+                          {categories.filter(c => c && c !== idea.category).map((cat) => (
+                            <MenuItem
+                              key={cat}
+                              onClick={() => {
+                                onUpdate({ ...idea, category: cat });
+                                setCategoryMenuAnchor(null);
+                              }}
+                            >
+                              <ListItemText primary={cat} />
+                            </MenuItem>
+                          ))}
+                        </Menu>
+                      )}
                     </Box>
                     <QuickActionsMenu
                       idea={idea}
                       onEdit={handleEditClick}
-                      onDelete={(id) => {
-                        setIdeaToDelete(id);
-                        setDeleteDialogOpen(true);
-                      }}
+                      onDelete={handleDeleteClick}
                       onToggleFavorite={onToggleFavorite}
-                      onDuplicate={(idea) => {
-                        const duplicated: Idea = {
-                          ...idea,
-                          id: `${idea.id}-copy-${Date.now()}`,
-                          title: `${idea.title} (Copy)`,
-                          createdAt: new Date(),
-                          updatedAt: new Date()
-                        };
-                        onUpdate(duplicated);
-                      }}
+                      onDuplicate={onDuplicate}
+                      onShare={() => {}}
                     />
                   </CardActions>
                 </Card>
@@ -615,6 +665,7 @@ const IdeaList: React.FC<IdeaListProps> = React.memo(({
               }}
               onCancel={() => setEditingIdea(null)}
               categories={categories}
+              ideas={ideas}
             />
           </DialogContent>
         </Dialog>

@@ -76,3 +76,11 @@ You are an expert React/TypeScript developer building Idea Weaver: a voice-first
 - If uncertain, ask for clarification rather than assume.
 
 Follow these instructions precisely for all code generation, refactoring, and debugging tasks in this project.
+
+## Extended Reference
+- **soul.md** — The soul of Idea Weaver: why we exist, who we serve, values, tone, AI role. Consult before adding features or writing UI copy.
+- **docs/PROJECT.md** — Project overview, stack, structure
+- **docs/ROADMAP.md** — Roadmap, priorities, TODO
+- **docs/FEATURES.md** — Feature guide
+- **docs/TESTING.md** — Testing checklist
+

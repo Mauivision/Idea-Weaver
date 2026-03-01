@@ -17,7 +17,8 @@ import {
   Tooltip
 } from '@mui/material';
 import { AddCircle as AddCircleIcon, Help as HelpIcon } from '@mui/icons-material';
-import TagsAutocomplete from './TagsAutocomplete.tsx';
+import TagsAutocomplete from './TagsAutocomplete';
+import { Idea, FEELING_OPTIONS } from '../models/Idea';
 
 // Maximum characters for title and description
 const MAX_TITLE_LENGTH = 100;
@@ -29,6 +30,8 @@ interface IdeaFormProps {
   onSubmit: (ideaData: Omit<Idea, 'id' | 'createdAt' | 'updatedAt' | 'notes'>) => void;
   onCancel: () => void;
   categories: string[];
+  /** When provided, tags use TagsAutocomplete with suggestions from these ideas */
+  ideas?: Idea[];
 }
 
 const IdeaForm: React.FC<IdeaFormProps> = ({
@@ -36,10 +39,12 @@ const IdeaForm: React.FC<IdeaFormProps> = ({
   onSubmit,
   onCancel,
   categories,
+  ideas: ideasForTags,
 }) => {
   const [title, setTitle] = useState(idea.title || '');
   const [description, setDescription] = useState(idea.description || '');
   const [category, setCategory] = useState(idea.category || 'Uncategorized');
+  const [feeling, setFeeling] = useState<string>(idea.feeling || '');
   const [tags, setTags] = useState<string[]>(idea.tags || []);
   const [currentTag, setCurrentTag] = useState('');
   
@@ -99,6 +104,7 @@ const IdeaForm: React.FC<IdeaFormProps> = ({
         title: title.trim(),
         description: description.trim(),
         category,
+        feeling: feeling || undefined,
         tags,
         isFavorite: idea.isFavorite || false,
         connections: idea.connections || [],
@@ -204,47 +210,76 @@ const IdeaForm: React.FC<IdeaFormProps> = ({
             {categoryError && <FormHelperText>{categoryError}</FormHelperText>}
           </FormControl>
         </Grid>
+
+        <Grid item xs={12} sm={6}>
+          <FormControl fullWidth size="medium">
+            <InputLabel id="feeling-label">Feeling (optional)</InputLabel>
+            <Select
+              labelId="feeling-label"
+              value={feeling}
+              onChange={(e) => setFeeling(e.target.value)}
+              label="Feeling (optional)"
+            >
+              <MenuItem value="">None</MenuItem>
+              {FEELING_OPTIONS.map((f) => (
+                <MenuItem key={f} value={f}>
+                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
         
         <Grid item xs={12}>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-            <TextField
-              label="Add Tags"
-              value={currentTag}
-              onChange={handleTagChange}
-              onKeyDown={handleKeyDown}
-              error={!!errors.tag}
-              helperText={errors.tag || "Press Enter to add a tag"}
-              sx={{ flexGrow: 1 }}
-              inputProps={{ maxLength: MAX_TAG_LENGTH + 5 }}
+          {ideasForTags != null ? (
+            <TagsAutocomplete
+              ideas={ideasForTags}
+              selectedTags={tags}
+              onChange={setTags}
+              placeholder="Add tags..."
             />
-            <Tooltip title="Add tag">
-              <IconButton 
-                color="primary"
-                onClick={handleAddTag} 
-                disabled={!currentTag.trim() || !!errors.tag}
-                sx={{ mt: 1 }}
-              >
-                <AddCircleIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Tags help categorize and find your ideas">
-              <IconButton sx={{ mt: 1 }}>
-                <HelpIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-          
-          <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: 'wrap', gap: 1 }}>
-            {tags.map((tag) => (
-              <Chip
-                key={tag}
-                label={tag}
-                onDelete={() => handleDeleteTag(tag)}
-                color="primary"
-                variant="outlined"
-              />
-            ))}
-          </Stack>
+          ) : (
+            <>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                <TextField
+                  label="Add Tags"
+                  value={currentTag}
+                  onChange={handleTagChange}
+                  onKeyDown={handleKeyDown}
+                  error={!!errors.tag}
+                  helperText={errors.tag || "Press Enter to add a tag"}
+                  sx={{ flexGrow: 1 }}
+                  inputProps={{ maxLength: MAX_TAG_LENGTH + 5 }}
+                />
+                <Tooltip title="Add tag">
+                  <IconButton 
+                    color="primary"
+                    onClick={handleAddTag} 
+                    disabled={!currentTag.trim() || !!errors.tag}
+                    sx={{ mt: 1 }}
+                  >
+                    <AddCircleIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Tags help categorize and find your ideas">
+                  <IconButton sx={{ mt: 1 }}>
+                    <HelpIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+              <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: 'wrap', gap: 1 }}>
+                {tags.map((tag) => (
+                  <Chip
+                    key={tag}
+                    label={tag}
+                    onDelete={() => handleDeleteTag(tag)}
+                    color="primary"
+                    variant="outlined"
+                  />
+                ))}
+              </Stack>
+            </>
+          )}
         </Grid>
         
         <Grid item xs={12}>

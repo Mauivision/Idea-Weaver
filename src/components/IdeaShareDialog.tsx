@@ -9,16 +9,14 @@ import {
   Box,
   Typography,
   IconButton,
-  Chip,
   Alert
 } from '@mui/material';
 import {
   Share as ShareIcon,
   Close as CloseIcon,
-  ContentCopy as ContentCopyIcon,
-  Link as LinkIcon
+  ContentCopy as ContentCopyIcon
 } from '@mui/icons-material';
-import { Idea } from '../models/Idea.tsx';
+import { Idea } from '../models/Idea';
 
 interface IdeaShareDialogProps {
   open: boolean;
@@ -33,8 +31,11 @@ const IdeaShareDialog: React.FC<IdeaShareDialogProps> = ({ open, idea, onClose }
     ? `${window.location.origin}/idea/${idea.id}`
     : '';
 
+  const notesText = idea?.notes?.length
+    ? idea.notes.map((n) => n.content?.trim()).filter(Boolean).join('\n\n')
+    : '';
   const shareText = idea
-    ? `${idea.title}\n\n${idea.description || ''}\n\n${idea.tags.length > 0 ? `Tags: ${idea.tags.join(', ')}\n` : ''}View idea: ${shareUrl}`
+    ? `${idea.title}\n${idea.category ? `Category: ${idea.category}\n` : ''}\n${idea.description || ''}\n\n${notesText ? `Notes:\n${notesText}\n\n` : ''}${idea.tags.length > 0 ? `Tags: ${idea.tags.join(', ')}\n` : ''}— Idea Weaver`
     : '';
 
   const handleCopyLink = useCallback(() => {
@@ -52,7 +53,7 @@ const IdeaShareDialog: React.FC<IdeaShareDialogProps> = ({ open, idea, onClose }
   }, [shareText]);
 
   const handleShare = useCallback(async () => {
-    if (navigator.share && idea) {
+    if ('share' in navigator && typeof navigator.share === 'function' && idea) {
       try {
         await navigator.share({
           title: idea.title,
@@ -133,7 +134,7 @@ const IdeaShareDialog: React.FC<IdeaShareDialogProps> = ({ open, idea, onClose }
             </Alert>
           )}
 
-          {navigator.share && (
+          {'share' in navigator && typeof navigator.share === 'function' && (
             <Button
               variant="contained"
               fullWidth

@@ -5,13 +5,11 @@
 // for the list of available Workbox modules, or add any other
 // code you'd like.
 
-const CACHE_NAME = 'idea-weaver-cache-v1';
+const CACHE_NAME = 'idea-weaver-cache-v2';
+// Shell only — JS/CSS are hashed per build and cached on first load
 const urlsToCache = [
   '/',
   '/index.html',
-  '/static/js/main.chunk.js',
-  '/static/js/0.chunk.js',
-  '/static/js/bundle.js',
   '/manifest.json',
   '/favicon.ico',
   '/logo192.png',

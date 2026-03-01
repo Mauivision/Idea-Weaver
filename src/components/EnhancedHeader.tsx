@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import RecentSearches from './RecentSearches.tsx';
+import React, { useState } from 'react';
+import RecentSearches from './RecentSearches';
 import {
   AppBar,
   Toolbar,
@@ -17,7 +17,6 @@ import {
   ListItemIcon,
   ListItemText,
   Switch,
-  FormControlLabel,
   useTheme,
   useMediaQuery,
   Drawer,
@@ -42,17 +41,17 @@ import {
   LightMode as LightModeIcon,
   Home as HomeIcon,
   TrendingUp as TrendingUpIcon,
-  Share as ShareIcon,
   Download as DownloadIcon,
   Upload as UploadIcon,
   Undo as UndoIcon,
   Redo as RedoIcon,
-  FilterList as FilterListIcon,
   PictureAsPdf as PictureAsPdfIcon,
   TableChart as TableChartIcon,
   Code as CodeIcon,
   AutoGraph as AutoGraphIcon,
-  GridOn as GridOnIcon
+  GridOn as GridOnIcon,
+  Archive as ArchiveIcon,
+  AutoAwesome as AutoAwesomeIcon
 } from '@mui/icons-material';
 
 interface EnhancedHeaderProps {
@@ -64,11 +63,14 @@ interface EnhancedHeaderProps {
   showFavoritesOnly: boolean;
   onFavoritesToggle: (show: boolean) => void;
   onNewIdea: () => void;
-  onViewModeChange: (mode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'clusters') => void;
-  currentViewMode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'clusters';
+  onViewModeChange: (mode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave') => void;
+  currentViewMode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave';
   onThemeToggle: () => void;
   isDarkMode: boolean;
   onExport: (format: 'json' | 'csv' | 'pdf') => void;
+  soundOn?: boolean;
+  onSoundToggle?: () => void;
+  onOpenArchive?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
   canUndo?: boolean;
@@ -89,6 +91,9 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
   onThemeToggle,
   isDarkMode,
   onExport,
+  soundOn = true,
+  onSoundToggle,
+  onOpenArchive,
   onUndo,
   onRedo,
   canUndo = false,
@@ -174,7 +179,8 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
     { id: 'brainstorm', label: 'Brainstorm', icon: <PsychologyIcon />, description: 'Creative brainstorming sessions' },
     { id: 'mindmap', label: 'Mind Map', icon: <AccountTreeIcon />, description: 'Interactive mind mapping' },
     { id: 'templates', label: 'Templates', icon: <DescriptionIcon />, description: 'Reusable templates' },
-    { id: 'analytics', label: 'Analytics', icon: <TrendingUpIcon />, description: 'View statistics and insights' }
+    { id: 'analytics', label: 'Analytics', icon: <TrendingUpIcon />, description: 'View statistics and insights' },
+    { id: 'weave', label: 'Weave', icon: <AutoAwesomeIcon />, description: 'Your notes woven together · AI summary' }
   ];
 
   const navigationItems = [
@@ -185,7 +191,8 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
     { id: 'brainstorm', label: 'Brainstorm', icon: <PsychologyIcon /> },
     { id: 'mindmap', label: 'Mind Map', icon: <AccountTreeIcon /> },
     { id: 'templates', label: 'Templates', icon: <DescriptionIcon /> },
-    { id: 'analytics', label: 'Analytics', icon: <TrendingUpIcon /> }
+    { id: 'analytics', label: 'Analytics', icon: <TrendingUpIcon /> },
+    { id: 'weave', label: 'Weave', icon: <AutoAwesomeIcon /> }
   ];
 
   const quickActions = [
@@ -231,6 +238,8 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
             <Box sx={{ flexGrow: 1, maxWidth: 400, mr: 3 }}>
               <RecentSearches
                 onSearch={onSearch}
+                searchTerm={searchTerm}
+                onSearchChange={onSearch}
                 maxItems={5}
               />
             </Box>
@@ -283,6 +292,16 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
                 <RedoIcon />
               </IconButton>
 
+              {/* Archive */}
+              {onOpenArchive && (
+                <IconButton
+                  color="inherit"
+                  onClick={onOpenArchive}
+                  title="Archive ideas"
+                >
+                  <ArchiveIcon />
+                </IconButton>
+              )}
               {/* Export */}
               <IconButton
                 color="inherit"
@@ -437,6 +456,13 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
           <ListItemText>Help & Support</ListItemText>
         </MenuItem>
         <Divider />
+        {onSoundToggle != null && (
+          <MenuItem onClick={(e) => e.stopPropagation()} dense>
+            <ListItemIcon />
+            <ListItemText primary="Sound on capture" secondary="Soft sound when adding ideas" />
+            <Switch size="small" checked={soundOn} onChange={onSoundToggle} />
+          </MenuItem>
+        )}
         <MenuItem onClick={handleMenuClose}>
           <ListItemIcon>
             <DownloadIcon />
@@ -497,6 +523,12 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
+        <MenuItem onClick={() => { handleExport('json'); handleExportClose(); }}>
+          <ListItemIcon>
+            <DownloadIcon />
+          </ListItemIcon>
+          <ListItemText primary="Download backup (JSON)" secondary="One-click export" />
+        </MenuItem>
         <MenuItem onClick={() => handleExport('json')}>
           <ListItemIcon>
             <CodeIcon />
@@ -513,7 +545,7 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
           <ListItemIcon>
             <PictureAsPdfIcon />
           </ListItemIcon>
-          <ListItemText>Export as PDF</ListItemText>
+          <ListItemText>Export as plain text (.txt)</ListItemText>
         </MenuItem>
       </Menu>
     </>

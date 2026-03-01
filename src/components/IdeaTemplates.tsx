@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Paper,
@@ -15,11 +15,7 @@ import {
   MenuItem,
   Chip,
   Grid,
-  IconButton,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction
+  IconButton
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -27,7 +23,7 @@ import {
   Close as CloseIcon,
   Lightbulb as LightbulbIcon
 } from '@mui/icons-material';
-import { Idea } from '../models/Idea.tsx';
+import { Idea } from '../models/Idea';
 
 interface IdeaTemplate {
   id: string;

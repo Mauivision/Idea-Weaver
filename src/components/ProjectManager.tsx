@@ -24,14 +24,10 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
-  Divider,
   LinearProgress,
   Tabs,
   Tab,
-  Badge,
   Avatar,
-  Tooltip,
-  Fab,
   useTheme,
   useMediaQuery
 } from '@mui/material';
@@ -43,20 +39,14 @@ import {
   Assignment as AssignmentIcon,
   Schedule as ScheduleIcon,
   Group as GroupIcon,
-  TrendingUp as TrendingUpIcon,
   CheckCircle as CheckCircleIcon,
   Pause as PauseIcon,
   PlayArrow as PlayArrowIcon,
   Stop as StopIcon,
-  Flag as FlagIcon,
-  CalendarToday as CalendarIcon,
-  Person as PersonIcon,
-  AttachFile as AttachFileIcon,
-  Note as NoteIcon,
-  Timeline as TimelineIcon
+  CalendarToday as CalendarIcon
 } from '@mui/icons-material';
-import { Project, Task, Milestone, TeamMember } from '../models/Project.tsx';
-import { Idea } from '../models/Idea.tsx';
+import { Project } from '../models/Project';
+import { Idea } from '../models/Idea';
 
 interface ProjectManagerProps {
   ideas: Idea[];
@@ -65,11 +55,12 @@ interface ProjectManagerProps {
 
 const ProjectManager: React.FC<ProjectManagerProps> = ({ ideas, onConnectIdea }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  useMediaQuery(theme.breakpoints.down('sm'));
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- used by setShowEditDialog
+  const [, setShowEditDialog] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -222,6 +213,7 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ ideas, onConnectIdea })
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- reserved for status dropdown
   const handleStatusChange = async (projectId: string, newStatus: string) => {
     setProjects(prev => prev.map(project => 
       project.id === projectId 

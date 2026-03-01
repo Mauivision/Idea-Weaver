@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Idea, Note } from '../models/Idea.tsx';
+import { Idea, Note } from '../models/Idea';
+import { recordCapture } from '../lib/streak';
+import { playCaptureSound } from '../lib/sound';
 
 const LOCAL_STORAGE_KEY = 'ideaWeaverIdeas';
 
 // Helper to safely parse dates from JSON
 const parseDates = (idea: any): Idea => ({
   ...idea,
+  isArchived: idea.isArchived ?? false,
   createdAt: new Date(idea.createdAt),
   updatedAt: new Date(idea.updatedAt),
   notes: Array.isArray(idea.notes) 
@@ -18,7 +21,6 @@ const parseDates = (idea: any): Idea => ({
           : undefined
       }))
     : [],
-  // Ensure connections exists even for older data
   connections: idea.connections || [],
   position: idea.position || { x: 0, y: 0 }
 });
@@ -82,14 +84,16 @@ export const useIdeas = () => {
     const newIdea: Idea = {
       ...idea,
       id: uuidv4(),
+      isArchived: false,
       createdAt: now,
       updatedAt: now,
       notes: [],
       connections: [],
       position: idea.position || { x: Math.random() * 800, y: Math.random() * 600 }
     };
-    
     setIdeas(prevIdeas => [...prevIdeas, newIdea]);
+    recordCapture();
+    playCaptureSound();
     return newIdea;
   }, []);
 
@@ -100,6 +104,31 @@ export const useIdeas = () => {
         ? { ...updatedIdea, updatedAt: new Date() } 
         : idea
     ));
+  }, []);
+
+  // Duplicate an idea (copy with new id, notes, position)
+  const duplicateIdea = useCallback((idea: Idea) => {
+    const now = new Date();
+    const newNotes = idea.notes.map(n => ({
+      ...n,
+      id: uuidv4(),
+      createdAt: now,
+    }));
+    const newIdea: Idea = {
+      ...idea,
+      id: uuidv4(),
+      title: `${idea.title} (Copy)`,
+      createdAt: now,
+      updatedAt: now,
+      notes: newNotes,
+      connections: [],
+      position: {
+        x: (idea.position?.x ?? 0) + 40,
+        y: (idea.position?.y ?? 0) + 40,
+      },
+    };
+    setIdeas(prevIdeas => [...prevIdeas, newIdea]);
+    return newIdea;
   }, []);
 
   // Delete an idea
@@ -143,7 +172,8 @@ export const useIdeas = () => {
           } 
         : idea
     ));
-
+    recordCapture();
+    playCaptureSound();
     return newNote;
   }, []);
 
@@ -231,15 +261,29 @@ export const useIdeas = () => {
     setViewMode(current => current === 'list' ? 'graph' : 'list');
   }, []);
 
+  // Archive / unarchive an idea
+  const setIdeaArchived = useCallback((id: string, archived: boolean) => {
+    setIdeas(prevIdeas => prevIdeas.map(idea =>
+      idea.id === id ? { ...idea, isArchived: archived, updatedAt: new Date() } : idea
+    ));
+  }, []);
+
+  const activeIdeas = ideas.filter(idea => !idea.isArchived);
+  const archivedIdeas = ideas.filter(idea => idea.isArchived);
+
   return { 
-    ideas, 
+    ideas: activeIdeas, 
+    allIdeas: ideas,
+    archivedIdeas,
     loading,
     error,
     viewMode,
     addIdea, 
     updateIdea, 
+    duplicateIdea,
     deleteIdea, 
     toggleFavorite,
+    setIdeaArchived,
     addNote,
     deleteNote,
     updateNote,

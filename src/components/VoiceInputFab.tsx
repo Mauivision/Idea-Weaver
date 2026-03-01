@@ -2,32 +2,16 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Fab, Tooltip } from '@mui/material';
 import { Mic as MicIcon, MicOff as MicOffIcon } from '@mui/icons-material';
 
-// SpeechRecognition types (Web Speech API)
-interface SpeechRecognitionEvent extends Event {
-  results: SpeechRecognitionResultList;
-  resultIndex: number;
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
-}
-
-interface SpeechRecognition extends EventTarget {
+// Web Speech API (Window.SpeechRecognition augmented in OnboardingScreen.tsx)
+interface SpeechRecognitionLocal extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
   start(): void;
   stop(): void;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onresult: ((e: { results: SpeechRecognitionResultList }) => void) | null;
+  onerror: ((e: { error: string }) => void) | null;
   onend: (() => void) | null;
-}
-
-declare global {
-  interface Window {
-    SpeechRecognition?: new () => SpeechRecognition;
-    webkitSpeechRecognition?: new () => SpeechRecognition;
-  }
 }
 
 interface VoiceInputFabProps {
@@ -43,19 +27,19 @@ const SpeechRecognitionClass =
 export default function VoiceInputFab({ onTranscript, showToast }: VoiceInputFabProps) {
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionLocal | null>(null);
 
   const isSupported = !!SpeechRecognitionClass;
 
   useEffect(() => {
     if (!SpeechRecognitionClass) return;
 
-    const recognition = new SpeechRecognitionClass() as SpeechRecognition;
+    const recognition = new SpeechRecognitionClass() as SpeechRecognitionLocal;
     recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    recognition.onresult = (event: { results: SpeechRecognitionResultList }) => {
       const last = event.results[event.results.length - 1];
       if (last.isFinal) {
         const text = last[0].transcript.trim();
@@ -66,7 +50,7 @@ export default function VoiceInputFab({ onTranscript, showToast }: VoiceInputFab
       }
     };
 
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+    recognition.onerror = (event: { error: string }) => {
       if (event.error === 'not-allowed' || event.error === 'permission-denied') {
         setError('Microphone access denied');
         showToast?.('Please allow microphone access', 'warning');
@@ -120,11 +104,11 @@ export default function VoiceInputFab({ onTranscript, showToast }: VoiceInputFab
 
   return (
     <Tooltip
-      title={error || (isListening ? 'Listening… click to stop' : 'Capture idea with voice')}
+      title={error || (isListening ? 'Listening… click to stop' : 'Say it — I\'ll capture it')}
       placement="left"
     >
       <Fab
-        color={isListening ? 'error' : 'secondary'}
+        color={isListening ? 'secondary' : 'primary'}
         aria-label={isListening ? 'Stop listening' : 'Capture with voice'}
         onClick={toggle}
         sx={{
@@ -132,10 +116,14 @@ export default function VoiceInputFab({ onTranscript, showToast }: VoiceInputFab
           bottom: 80,
           left: 20,
           zIndex: 1000,
-          animation: isListening ? 'pulse 1.5s ease-in-out infinite' : 'none',
-          '@keyframes pulse': {
-            '0%, 100%': { opacity: 1 },
-            '50%': { opacity: 0.7 },
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+          animation: isListening ? 'voicePulse 1.4s ease-in-out infinite' : 'none',
+          '&:hover': {
+            transform: 'scale(1.06)',
+          },
+          '@keyframes voicePulse': {
+            '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+            '50%': { opacity: 0.85, transform: 'scale(1.03)' },
           },
         }}
       >

@@ -1,16 +1,20 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useIdeas } from '../hooks/useIdeas.ts';
-import { Idea } from '../models/Idea.tsx';
+import { useIdeas } from '../hooks/useIdeas';
+import { Idea } from '../models/Idea';
 
 interface IdeasContextType {
   ideas: Idea[];
+  allIdeas: Idea[];
+  archivedIdeas: Idea[];
   loading: boolean;
   error: string | null;
   viewMode: 'list' | 'graph';
   addIdea: (idea: Omit<Idea, 'id' | 'createdAt' | 'updatedAt' | 'notes' | 'connections'>) => Idea;
   updateIdea: (idea: Idea) => void;
+  duplicateIdea: (idea: Idea) => Idea;
   deleteIdea: (id: string) => void;
   toggleFavorite: (id: string) => void;
+  setIdeaArchived: (id: string, archived: boolean) => void;
   addNote: (ideaId: string, content: string, position?: { x: number; y: number }) => void;
   deleteNote: (ideaId: string, noteId: string) => void;
   updateNote: (ideaId: string, noteId: string, updates: { content?: string; position?: { x: number; y: number } }) => void;
