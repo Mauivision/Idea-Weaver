@@ -23,7 +23,7 @@ import {
   Close as CloseIcon,
   AutoAwesome as SparkleIcon,
 } from '@mui/icons-material';
-import { Idea } from '../models/Idea.ts';
+import { Idea } from '../models/Idea';
 
 interface IdeaFocusWebProps {
   idea: Idea;
@@ -206,7 +206,7 @@ export default function IdeaFocusWeb({
                     <stop offset="100%" stopColor={isDark ? 'rgba(129,199,132,0.15)' : 'rgba(46,125,50,0.06)'} />
                   </linearGradient>
                 </defs>
-                {notes.map((_, i) => {
+                {notes.map((_, i: number) => {
                   const pos = radialPosition(i, notes.length || 1, noteRadius);
                   const tx = cx + pos.x;
                   const ty = cy + pos.y;
@@ -223,7 +223,7 @@ export default function IdeaFocusWeb({
                     />
                   );
                 })}
-                {connectedIdeas.map((_, i) => {
+                {connectedIdeas.map((_, i: number) => {
                   const pos = radialPosition(i, connectedIdeas.length || 1, connectionRadius);
                   const tx = cx + pos.x;
                   const ty = cy + pos.y;
@@ -321,7 +321,7 @@ export default function IdeaFocusWeb({
 
                 {idea.tags.length > 0 && (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 0.5, mt: 1.5 }}>
-                    {idea.tags.map((tag) => (
+                    {idea.tags.map((tag: string) => (
                       <Chip
                         key={tag}
                         label={tag}
@@ -351,7 +351,7 @@ export default function IdeaFocusWeb({
               </Paper>
 
               {/* === INNER RING: Notes === */}
-              {notes.map((note, i) => {
+              {notes.map((note, i: number) => {
                 const pos = radialPosition(i, notes.length || 1, noteRadius);
                 const colors = ['#FFF9C4', '#F3E5F5', '#E0F7FA', '#FBE9E7', '#E8F5E9', '#E3F2FD', '#FCE4EC', '#FFF8E1'];
                 const bg = isDark ? alpha(colors[i % colors.length], 0.08) : colors[i % colors.length];
