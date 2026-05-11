@@ -15,6 +15,7 @@ interface IdeasContextType {
   deleteIdea: (id: string) => void;
   toggleFavorite: (id: string) => void;
   setIdeaArchived: (id: string, archived: boolean) => void;
+  importIdeas: (ideas: Idea[]) => void;
   addNote: (ideaId: string, content: string, position?: { x: number; y: number }) => void;
   deleteNote: (ideaId: string, noteId: string) => void;
   updateNote: (ideaId: string, noteId: string, updates: { content?: string; position?: { x: number; y: number } }) => void;
