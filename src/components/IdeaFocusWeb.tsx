@@ -23,7 +23,7 @@ import {
   Close as CloseIcon,
   AutoAwesome as SparkleIcon,
 } from '@mui/icons-material';
-import { Idea } from '../models/Idea.ts';
+import { Idea } from '../models/Idea';
 
 interface IdeaFocusWebProps {
   idea: Idea;
