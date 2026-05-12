@@ -54,6 +54,8 @@ import {
   AutoAwesome as AutoAwesomeIcon
 } from '@mui/icons-material';
 
+type ViewMode = 'board' | 'clusters' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave';
+
 interface EnhancedHeaderProps {
   onSearch: (term: string) => void;
   searchTerm: string;
@@ -63,8 +65,8 @@ interface EnhancedHeaderProps {
   showFavoritesOnly: boolean;
   onFavoritesToggle: (show: boolean) => void;
   onNewIdea: () => void;
-  onViewModeChange: (mode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave') => void;
-  currentViewMode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave';
+  onViewModeChange: (mode: ViewMode) => void;
+  currentViewMode: ViewMode;
   onThemeToggle: () => void;
   isDarkMode: boolean;
   onExport: (format: 'json' | 'csv' | 'pdf') => void;
@@ -169,7 +171,7 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onNewIdea, onUndo, onRedo]);
 
-  const viewModes = [
+  const viewModes: Array<{ id: ViewMode; label: string; icon: React.ReactElement; description: string }> = [
     { id: 'board', label: 'Notes Board', icon: <GridOnIcon />, description: 'Notes on a snap grid (home)' },
     { id: 'clusters', label: 'Clusters', icon: <HomeIcon />, description: 'Ideas grouped into weavy clusters' },
     { id: 'list', label: 'Idea List', icon: <LightbulbIcon />, description: 'Browse ideas in a list format' },
@@ -183,7 +185,7 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
     { id: 'weave', label: 'Weave', icon: <AutoAwesomeIcon />, description: 'Your notes woven together · AI summary' }
   ];
 
-  const navigationItems = [
+  const navigationItems: Array<{ id: ViewMode; label: string; icon: React.ReactElement }> = [
     { id: 'board', label: 'Home (Notes Board)', icon: <HomeIcon /> },
     { id: 'clusters', label: 'Clusters', icon: <HomeIcon /> },
     { id: 'list', label: 'Ideas', icon: <LightbulbIcon /> },
@@ -253,7 +255,7 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
                   key={mode.id}
                   label={mode.label}
                   icon={mode.icon}
-                  onClick={() => onViewModeChange(mode.id as any)}
+                  onClick={() => onViewModeChange(mode.id)}
                   color={currentViewMode === mode.id ? 'primary' : 'default'}
                   variant={currentViewMode === mode.id ? 'filled' : 'outlined'}
                   size="small"
@@ -374,7 +376,7 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
                 key={mode.id}
                 label={mode.label}
                 icon={mode.icon}
-                onClick={() => onViewModeChange(mode.id as any)}
+                onClick={() => onViewModeChange(mode.id)}
                 color={currentViewMode === mode.id ? 'primary' : 'default'}
                 variant={currentViewMode === mode.id ? 'filled' : 'outlined'}
                 size="small"
@@ -400,7 +402,7 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
               <ListItem key={item.id} disablePadding>
                 <ListItemButton
                   onClick={() => {
-                    onViewModeChange(item.id as any);
+                    onViewModeChange(item.id);
                     setMobileMenuOpen(false);
                   }}
                 >
