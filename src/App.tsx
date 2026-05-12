@@ -30,6 +30,7 @@ import DuplicateDetection from './components/DuplicateDetection';
 import SmartLinking from './components/SmartLinking';
 import IdeaTemplates from './components/IdeaTemplates';
 import NoteGridBoard from './components/NoteGridBoard';
+import ClusterGrid from './components/ClusterGrid';
 import ArchiveDialog from './components/ArchiveDialog';
 import IdeaWeave from './components/IdeaWeave';
 import { Idea } from './models/Idea';
@@ -56,6 +57,7 @@ function App() {
     deleteIdea, 
     toggleFavorite,
     setIdeaArchived,
+    importIdeas,
     addNote,
     deleteNote,
     updateNote,
@@ -75,7 +77,7 @@ function App() {
     message: '',
     severity: 'info'
   });
-  const [currentViewMode, setCurrentViewMode] = useState<'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave'>('board');
+  const [currentViewMode, setCurrentViewMode] = useState<'board' | 'clusters' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave'>('board');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [advancedSearchResults, setAdvancedSearchResults] = useState<Idea[]>([]);
@@ -240,7 +242,7 @@ function App() {
   };
 
   const handleExport = (format: 'json' | 'csv' | 'pdf') => {
-    exportIdeas(ideas, format);
+    exportIdeas(allIdeas, format);
   };
 
   // Handle idea reordering in list view
@@ -255,7 +257,7 @@ function App() {
     showToast('Ideas reordered!', 'success');
   }, [updateIdea, showToast]);
 
-  const handleViewModeChange = useCallback((mode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave') => {
+  const handleViewModeChange = useCallback((mode: 'board' | 'clusters' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave') => {
     setCurrentViewMode(mode);
     if (mode === 'list' || mode === 'graph') {
       toggleViewMode();
@@ -387,21 +389,9 @@ function App() {
   }, [deleteIdea, showToast, setSelectedIdeas]);
 
   const handleImport = useCallback((importedIdeas: Idea[]) => {
-    importedIdeas.forEach(idea => {
-      // Validate and add imported idea
-      if (idea.id && idea.title && idea.category) {
-        addIdea({
-          title: idea.title,
-          description: idea.description || '',
-          category: idea.category,
-          tags: idea.tags || [],
-          isFavorite: idea.isFavorite || false,
-          position: idea.position || { x: Math.random() * 800, y: Math.random() * 600 }
-        });
-      }
-    });
+    importIdeas(importedIdeas);
     showToast(`Imported ${importedIdeas.length} idea${importedIdeas.length !== 1 ? 's' : ''}`, 'success');
-  }, [addIdea, showToast]);
+  }, [importIdeas, showToast]);
 
   // Compute categories from ideas
   const categories = React.useMemo(() => {
@@ -443,7 +433,7 @@ function App() {
         
         {loading && <LinearProgress color="secondary" />}
         
-        <Container maxWidth={currentViewMode === 'list' ? 'lg' : false} disableGutters={currentViewMode === 'board' || currentViewMode === 'graph' || currentViewMode === 'mindmap' || currentViewMode === 'flowchart' || currentViewMode === 'weave'} sx={{ mt: 2, mb: 4, flexGrow: 1 }}>
+        <Container maxWidth={currentViewMode === 'list' ? 'lg' : false} disableGutters={currentViewMode === 'board' || currentViewMode === 'clusters' || currentViewMode === 'graph' || currentViewMode === 'mindmap' || currentViewMode === 'flowchart' || currentViewMode === 'weave'} sx={{ mt: 2, mb: 4, flexGrow: 1 }}>
           <Snackbar 
             open={snackbar.open} 
             autoHideDuration={3000} 
@@ -672,6 +662,25 @@ function App() {
                 </>
               )}
 
+              {currentViewMode === 'clusters' && (
+                <ClusterGrid
+                  ideas={filteredIdeas}
+                  onUpdate={updateIdea}
+                  onDelete={handleDeleteIdea}
+                  onToggleFavorite={toggleFavorite}
+                  onAddIdea={addIdeaWithSprite}
+                  onAddNote={addNoteWithSprite}
+                  categories={categories.filter(cat => cat !== 'All')}
+                  onFocusIdea={(id) => {
+                    const idea = ideas.find(item => item.id === id);
+                    if (idea) {
+                      setSearchTerm(idea.title);
+                      setCurrentViewMode('list');
+                    }
+                  }}
+                />
+              )}
+
               {currentViewMode === 'graph' && (
                 <Box sx={{ height: 'calc(100vh - 140px)', width: '100%' }}>
                   <IdeaGraph
@@ -792,7 +801,7 @@ function App() {
         {/* Data Export/Import Button */}
         <Box sx={{ position: 'fixed', bottom: 80, right: 20, zIndex: 1000 }}>
           <DataExportImport
-            ideas={ideas}
+            ideas={allIdeas}
             onImport={handleImport}
           />
         </Box>
