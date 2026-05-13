@@ -253,7 +253,7 @@ export default function NoteGridBoard({
         if (!srcNote || !tgtNote) return;
         const s = noteCenter(srcNote);
         const t = noteCenter(tgtNote);
-        lines.push({ ...s, x2: t.x, y2: t.y, key: pairKey });
+        lines.push({ x1: s.x, y1: s.y, x2: t.x, y2: t.y, key: pairKey });
       });
     });
     return lines;
