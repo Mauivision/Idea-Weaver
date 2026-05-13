@@ -576,6 +576,8 @@ function App() {
                     deleteNote={deleteNote}
                     updateNote={updateNote}
                     addIdea={addIdeaWithSprite}
+                    onAddConnection={handleConnectIdeas}
+                    onRemoveConnection={handleDisconnectIdeas}
                   />
                   </Box>
                 </Box>
