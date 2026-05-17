@@ -11,11 +11,21 @@ import {
   Button,
   useTheme,
   Grow,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Tooltip,
 } from '@mui/material';
 import { alpha, keyframes } from '@mui/material/styles';
-import { Add as AddIcon, Delete as DeleteIcon, NoteAdd as NoteAddIcon } from '@mui/icons-material';
+import {
+  Delete as DeleteIcon,
+  Link as LinkIcon,
+  LinkOff as LinkOffIcon,
+  AutoAwesome as SparkleIcon,
+} from '@mui/icons-material';
 import { Idea, Note } from '../models/Idea';
-import { BounceIn, popIn, pulseGlow } from './Animations';
+import { BounceIn, popIn } from './Animations';
 
 const GRID_CELL = 40;
 const QUICK_NOTES_TITLE = 'Quick notes';
@@ -65,7 +75,7 @@ const threadDash = keyframes`
   to { stroke-dashoffset: -12; }
 `;
 
-export interface NoteWithMeta {
+interface NoteWithMeta {
   note: Note;
   ideaId: string;
   ideaTitle: string;
@@ -77,6 +87,8 @@ interface NoteGridBoardProps {
   deleteNote: (ideaId: string, noteId: string) => void;
   updateNote: (ideaId: string, noteId: string, updates: { content?: string; position?: { x: number; y: number } }) => void;
   addIdea: (idea: Omit<Idea, 'id' | 'createdAt' | 'updatedAt' | 'notes' | 'connections'>) => Idea;
+  onAddConnection?: (sourceId: string, targetId: string) => void;
+  onRemoveConnection?: (sourceId: string, targetId: string) => void;
 }
 
 export default function NoteGridBoard({
@@ -85,9 +97,10 @@ export default function NoteGridBoard({
   deleteNote,
   updateNote,
   addIdea,
+  onAddConnection,
+  onRemoveConnection,
 }: NoteGridBoardProps) {
   const theme = useTheme();
-<<<<<<< Updated upstream
   const isDark = theme.palette.mode === 'dark';
   const boardRef = useRef<HTMLDivElement>(null);
   const dragPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -99,25 +112,16 @@ export default function NoteGridBoard({
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
   const [linkMenuAnchor, setLinkMenuAnchor] = useState<{ el: HTMLElement; ideaId: string } | null>(null);
   const [unlinkMenuAnchor, setUnlinkMenuAnchor] = useState<{ el: HTMLElement; ideaId: string } | null>(null);
-=======
-  const [createOpen, setCreateOpen] = useState(false);
-  const [newContent, setNewContent] = useState('');
-  const [deleteTarget, setDeleteTarget] = useState<{ ideaId: string; noteId: string } | null>(null);
-  const [dragging, setDragging] = useState<{ ideaId: string; noteId: string; offsetX: number; offsetY: number } | null>(null);
-  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
-  const boardRef = useRef<HTMLDivElement>(null);
-  const dragPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  const isDark = theme.palette.mode === 'dark';
-  const noteCardBg = isDark
-    ? alpha(theme.palette.primary.main, 0.08)
-    : alpha(theme.palette.primary.main, 0.04);
-  const noteCardBorder = isDark
-    ? alpha(theme.palette.primary.main, 0.2)
-    : alpha(theme.palette.primary.main, 0.15);
-  const noteCardHover = isDark
-    ? alpha(theme.palette.primary.main, 0.12)
-    : alpha(theme.palette.primary.main, 0.07);
+  const flat = useMemo<NoteWithMeta[]>(() => {
+    return ideas.flatMap((idea) =>
+      idea.notes.map((note) => ({
+        note,
+        ideaId: idea.id,
+        ideaTitle: idea.title,
+      }))
+    );
+  }, [ideas]);
 
   const getBoardCoords = useCallback((e: { clientX: number; clientY: number }) => {
     const el = boardRef.current;
@@ -127,33 +131,6 @@ export default function NoteGridBoard({
       x: e.clientX - r.left + el.scrollLeft,
       y: e.clientY - r.top + el.scrollTop,
     };
-  }, []);
->>>>>>> Stashed changes
-
-  const flat: NoteWithMeta[] = [];
-  ideas.forEach((idea) => {
-    idea.notes.forEach((note) => {
-      flat.push({ note, ideaId: idea.id, ideaTitle: idea.title });
-    });
-  });
-
-  const usedSlots = useMemo(() => {
-    const set = new Set<string>();
-    ideas.forEach((idea) =>
-      idea.notes.forEach((note) => {
-        if (note.position) {
-          set.add(`${Math.round(note.position.x / GRID_CELL)},${Math.round(note.position.y / GRID_CELL)}`);
-        }
-      })
-    );
-    return set;
-  }, [ideas]);
-
-  const getBoardCoords = useCallback((e: { clientX: number; clientY: number }) => {
-    const el = boardRef.current;
-    if (!el) return { x: 0, y: 0 };
-    const r = el.getBoundingClientRect();
-    return { x: e.clientX - r.left + el.scrollLeft, y: e.clientY - r.top + el.scrollTop };
   }, []);
 
   const getOrCreateQuickNotesIdea = useCallback((): string => {
@@ -171,30 +148,22 @@ export default function NoteGridBoard({
     return quick.id;
   }, [ideas, addIdea]);
 
-  const handleBoardClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if ((e.target as HTMLElement) !== boardRef.current) return;
-      if (editingNote) return;
-      const coords = getBoardCoords(e);
-      const snapped = snap(coords);
-      const ideaId = getOrCreateQuickNotesIdea();
-      addNote(ideaId, '', snapped);
-      const newFlat = ideas.flatMap((idea) => idea.notes.map((n) => ({ ideaId: idea.id, noteId: n.id })));
-      setTimeout(() => {
-        const allNotes = ideas.flatMap((idea) => idea.notes);
-        const newest = allNotes[allNotes.length - 1];
-        if (newest) {
-          // editing will be set by the re-render
-        }
-      }, 50);
-    },
-    [getBoardCoords, getOrCreateQuickNotesIdea, addNote, ideas, editingNote]
-  );
-
   const startEditing = useCallback((ideaId: string, noteId: string, currentContent: string) => {
     setEditingNote({ ideaId, noteId });
     setEditContent(currentContent);
   }, []);
+
+  const handleBoardClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if ((e.target as HTMLElement) !== boardRef.current) return;
+      if (editingNote) return;
+
+      const coords = getBoardCoords(e);
+      const ideaId = getOrCreateQuickNotesIdea();
+      addNote(ideaId, '', snap(coords));
+    },
+    [getBoardCoords, getOrCreateQuickNotesIdea, addNote, editingNote]
+  );
 
   const finishEditing = useCallback(() => {
     if (!editingNote) return;
@@ -207,10 +176,12 @@ export default function NoteGridBoard({
     (e: React.MouseEvent | React.TouchEvent, ideaId: string, noteId: string, note: Note) => {
       if ((e.target as HTMLElement).closest('button')) return;
       if ((e.target as HTMLElement).closest('textarea')) return;
+
       e.preventDefault();
       const pointer = 'touches' in e ? e.touches[0] : e;
       const pos = note.position ?? { x: 0, y: 0 };
       const bc = getBoardCoords({ clientX: pointer.clientX, clientY: pointer.clientY });
+
       setDragging({ ideaId, noteId, offsetX: bc.x - pos.x, offsetY: bc.y - pos.y });
       setDragPos({ x: pos.x, y: pos.y });
       dragPosRef.current = { x: pos.x, y: pos.y };
@@ -220,32 +191,41 @@ export default function NoteGridBoard({
 
   useEffect(() => {
     if (!dragging) return;
-    let rafId: number;
+
+    let rafId: number | undefined;
     const el = boardRef.current;
     const d = dragging;
+
     const onMove = (e: MouseEvent | TouchEvent) => {
       e.preventDefault();
       const coords = 'touches' in e ? e.touches[0] : e;
       if (rafId) cancelAnimationFrame(rafId);
+
       rafId = requestAnimationFrame(() => {
         if (!el) return;
         const r = el.getBoundingClientRect();
-        const next = { x: coords.clientX - r.left + el.scrollLeft - d.offsetX, y: coords.clientY - r.top + el.scrollTop - d.offsetY };
+        const next = {
+          x: coords.clientX - r.left + el.scrollLeft - d.offsetX,
+          y: coords.clientY - r.top + el.scrollTop - d.offsetY,
+        };
         dragPosRef.current = next;
         setDragPos(next);
       });
     };
+
     const onUp = () => {
       if (rafId) cancelAnimationFrame(rafId);
       updateNote(d.ideaId, d.noteId, { position: snap(dragPosRef.current) });
       setDragging(null);
       setDragPos(null);
     };
+
     window.addEventListener('mousemove', onMove, { passive: false });
     window.addEventListener('mouseup', onUp);
     window.addEventListener('touchmove', onMove, { passive: false });
     window.addEventListener('touchend', onUp);
     window.addEventListener('touchcancel', onUp);
+
     return () => {
       if (rafId) cancelAnimationFrame(rafId);
       window.removeEventListener('mousemove', onMove);
@@ -263,21 +243,24 @@ export default function NoteGridBoard({
       x: (n.position?.x ?? 0) + NOTE_WIDTH / 2,
       y: (n.position?.y ?? 0) + NOTE_MIN_HEIGHT / 2,
     });
+
     ideas.forEach((idea) => {
       idea.connections.forEach((targetId) => {
         const pairKey = [idea.id, targetId].sort().join('-');
         if (seen.has(pairKey)) return;
         seen.add(pairKey);
+
         const target = ideas.find((i) => i.id === targetId);
-        if (!target) return;
         const srcNote = idea.notes[0];
-        const tgtNote = target.notes[0];
+        const tgtNote = target?.notes[0];
         if (!srcNote || !tgtNote) return;
+
         const s = noteCenter(srcNote);
         const t = noteCenter(tgtNote);
         lines.push({ ...s, x2: t.x, y2: t.y, key: pairKey });
       });
     });
+
     return lines;
   }, [ideas]);
 
@@ -299,9 +282,16 @@ export default function NoteGridBoard({
         p: 2,
       }}
     >
-      {/* Connection threads */}
       <svg
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 0 }}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
       >
         {connectionLines.map(({ x1, y1, x2, y2, key }) => {
           const mx = (x1 + x2) / 2;
@@ -320,7 +310,6 @@ export default function NoteGridBoard({
         })}
       </svg>
 
-      {/* Warm, inviting empty state */}
       {flat.length === 0 && (
         <Box
           sx={{
@@ -334,7 +323,6 @@ export default function NoteGridBoard({
           }}
         >
           <BounceIn duration={0.5}>
-<<<<<<< Updated upstream
             <SparkleIcon sx={{ fontSize: 56, mb: 2, opacity: 0.35, color: 'secondary.main' }} />
             <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: 'text.primary', opacity: 0.8 }}>
               Your ideas live here
@@ -345,38 +333,18 @@ export default function NoteGridBoard({
             <Typography variant="body2" sx={{ opacity: 0.45, fontStyle: 'italic' }}>
               Drag them around, connect them, watch your thoughts take shape.
             </Typography>
-=======
-            <NoteAddIcon sx={{ fontSize: 56, mb: 2, opacity: 0.35, color: 'primary.main' }} />
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'text.primary' }}>
-              Your board is waiting
-            </Typography>
-            <Typography variant="body2" sx={{ mb: 2.5, maxWidth: 340, lineHeight: 1.6 }}>
-              Drop your first note here — a thought, a line, a dream. Drag it anywhere, then add more. This space is yours.
-            </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setCreateOpen(true)}
-              sx={{ borderRadius: 1, px: 3, py: 1.5 }}
-            >
-              Add your first note
-            </Button>
->>>>>>> Stashed changes
           </BounceIn>
         </Box>
       )}
 
-      {/* Notes */}
       {flat.map(({ note, ideaId, ideaTitle }, index) => {
+        const idea = ideas.find((i) => i.id === ideaId);
+        const connections = idea?.connections ?? [];
         const isDraggingThis = dragging?.noteId === note.id && dragging?.ideaId === ideaId;
-<<<<<<< Updated upstream
         const isEditing = editingNote?.noteId === note.id && editingNote?.ideaId === ideaId;
         const pos = isDraggingThis && dragPos ? dragPos : note.position ?? { x: 0, y: 0 };
         const palette = pickPalette(index, isDark);
-        const canLink = onAddConnection && ideas.filter((i) => i.id !== ideaId && !connections.includes(i.id)).length > 0;
-=======
-        const pos = isDraggingThis && dragPos ? dragPos : (note.position ?? { x: 0, y: 0 });
->>>>>>> Stashed changes
+        const canLink = !!onAddConnection && ideas.filter((i) => i.id !== ideaId && !connections.includes(i.id)).length > 0;
 
         return (
           <Box
@@ -392,23 +360,16 @@ export default function NoteGridBoard({
             }}
           >
             <Paper
-<<<<<<< Updated upstream
               elevation={isDraggingThis ? 10 : isEditing ? 6 : 1}
               onMouseDown={(e) => !isEditing && handlePointerDown(e, ideaId, note.id, note)}
               onTouchStart={(e) => !isEditing && handlePointerDown(e, ideaId, note.id, note)}
               onDoubleClick={() => {
                 if (!isEditing) startEditing(ideaId, note.id, note.content);
               }}
-=======
-              elevation={0}
-              onMouseDown={(e) => handlePointerDown(e, ideaId, note.id, note)}
-              onTouchStart={(e) => handlePointerDown(e, ideaId, note.id, note)}
->>>>>>> Stashed changes
               sx={{
                 width: NOTE_WIDTH,
                 minHeight: NOTE_MIN_HEIGHT,
                 p: 2,
-<<<<<<< Updated upstream
                 pt: 1,
                 cursor: isEditing ? 'text' : isDraggingThis ? 'grabbing' : 'grab',
                 userSelect: isEditing ? 'text' : 'none',
@@ -439,26 +400,9 @@ export default function NoteGridBoard({
                   borderRadius: '0 0 4px 4px',
                   backgroundColor: palette.border,
                   opacity: 0.6,
-=======
-                cursor: isDraggingThis ? 'grabbing' : 'grab',
-                userSelect: 'none',
-                WebkitUserSelect: 'none',
-                touchAction: 'none',
-                zIndex: isDraggingThis ? 1300 : 1,
-                transition: isDraggingThis ? 'none' : 'box-shadow 0.2s ease',
-                backgroundColor: noteCardBg,
-                border: '1px solid',
-                borderColor: noteCardBorder,
-                borderRadius: 1.5,
-                boxShadow: isDraggingThis ? '0 4px 20px rgba(0,0,0,0.12)' : '0 1px 3px rgba(0,0,0,0.06)',
-                '&:hover': {
-                  boxShadow: isDraggingThis ? undefined : '0 2px 8px rgba(0,0,0,0.08)',
-                  backgroundColor: noteCardHover,
->>>>>>> Stashed changes
                 },
               }}
             >
-              {/* Category label */}
               <Typography
                 variant="caption"
                 sx={{
@@ -477,9 +421,7 @@ export default function NoteGridBoard({
               >
                 {ideaTitle}
               </Typography>
-<<<<<<< Updated upstream
 
-              {/* Note content — inline editing or display */}
               {isEditing ? (
                 <textarea
                   autoFocus
@@ -522,15 +464,10 @@ export default function NoteGridBoard({
                     startEditing(ideaId, note.id, note.content);
                   }}
                 >
-                  {note.content || (
-                    <span style={{ opacity: 0.35, fontStyle: 'italic' }}>
-                      Click to write...
-                    </span>
-                  )}
+                  {note.content || <span style={{ opacity: 0.35, fontStyle: 'italic' }}>Click to write...</span>}
                 </Typography>
               )}
 
-              {/* Hoverable action buttons */}
               <Box
                 className="note-actions"
                 sx={{
@@ -590,24 +527,8 @@ export default function NoteGridBoard({
                     <DeleteIcon sx={{ fontSize: 16 }} />
                   </IconButton>
                 </Tooltip>
-=======
-              <Box sx={{ display: 'flex', gap: 0 }}>
-                <IconButton
-                  size="small"
-                  aria-label="Delete note"
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteClick(ideaId, note.id);
-                  }}
-                  sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
->>>>>>> Stashed changes
               </Box>
 
-              {/* Connection dot indicator */}
               {connections.length > 0 && (
                 <Box
                   sx={{
@@ -629,8 +550,6 @@ export default function NoteGridBoard({
         );
       })}
 
-<<<<<<< Updated upstream
-      {/* Delete confirmation */}
       <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} TransitionComponent={Grow} TransitionProps={{ timeout: 220 }}>
         <DialogTitle>Remove this note?</DialogTitle>
         <DialogContent>
@@ -645,49 +564,6 @@ export default function NoteGridBoard({
               if (deleteTarget) {
                 deleteNote(deleteTarget.ideaId, deleteTarget.noteId);
                 setDeleteTarget(null);
-=======
-      <Fab
-        color="primary"
-        aria-label="Add note"
-        onClick={() => setCreateOpen(true)}
-        sx={{
-          position: 'fixed',
-          bottom: 24,
-          right: 24,
-          zIndex: 1200,
-          animation: `${pulseGlow} 2s ease-in-out infinite`,
-          transition: 'transform 0.2s',
-          '&:hover': {
-            transform: 'scale(1.08)',
-          },
-        }}
-      >
-        <AddIcon />
-      </Fab>
-
-      <Dialog
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        TransitionComponent={Grow}
-        TransitionProps={{ timeout: 280 }}
-      >
-        <DialogTitle>New note</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            fullWidth
-            multiline
-            rows={4}
-            placeholder="What's on your mind?"
-            value={newContent}
-            onChange={(e) => setNewContent(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                handleCreate();
->>>>>>> Stashed changes
               }
             }}
           >
@@ -696,8 +572,6 @@ export default function NoteGridBoard({
         </DialogActions>
       </Dialog>
 
-<<<<<<< Updated upstream
-      {/* Link menu */}
       {linkMenuAnchor && (
         <Menu
           anchorEl={linkMenuAnchor.el}
@@ -708,7 +582,10 @@ export default function NoteGridBoard({
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         >
           {ideas
-            .filter((i) => i.id !== linkMenuAnchor.ideaId && !ideas.find((x) => x.id === linkMenuAnchor.ideaId)?.connections.includes(i.id))
+            .filter((i) => {
+              const source = ideas.find((x) => x.id === linkMenuAnchor.ideaId);
+              return i.id !== linkMenuAnchor.ideaId && !source?.connections.includes(i.id);
+            })
             .map((target) => (
               <MenuItem
                 key={target.id}
@@ -717,14 +594,15 @@ export default function NoteGridBoard({
                   setLinkMenuAnchor(null);
                 }}
               >
-                <ListItemIcon><LinkIcon fontSize="small" /></ListItemIcon>
+                <ListItemIcon>
+                  <LinkIcon fontSize="small" />
+                </ListItemIcon>
                 <ListItemText primary={`Thread to "${target.title}"`} />
               </MenuItem>
             ))}
         </Menu>
       )}
 
-      {/* Unlink menu */}
       {unlinkMenuAnchor && (
         <Menu
           anchorEl={unlinkMenuAnchor.el}
@@ -744,33 +622,14 @@ export default function NoteGridBoard({
                   setUnlinkMenuAnchor(null);
                 }}
               >
-                <ListItemIcon><LinkOffIcon fontSize="small" /></ListItemIcon>
+                <ListItemIcon>
+                  <LinkOffIcon fontSize="small" />
+                </ListItemIcon>
                 <ListItemText primary={`Unthread from "${target.title}"`} />
               </MenuItem>
             ))}
         </Menu>
       )}
-=======
-      <Dialog
-        open={!!deleteTarget}
-        onClose={handleDeleteCancel}
-        TransitionComponent={Grow}
-        TransitionProps={{ timeout: 220 }}
-      >
-        <DialogTitle>Delete note?</DialogTitle>
-        <DialogContent>
-          <Typography color="text.secondary">
-            This note will be removed from the board. This can&apos;t be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteCancel}>Cancel</Button>
-          <Button variant="contained" color="error" onClick={handleDeleteConfirm}>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
->>>>>>> Stashed changes
     </Box>
   );
 }
