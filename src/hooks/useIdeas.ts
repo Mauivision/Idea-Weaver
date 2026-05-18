@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Idea, Note } from '../models/Idea';
 import { recordCapture } from '../lib/streak';
@@ -6,30 +6,55 @@ import { playCaptureSound } from '../lib/sound';
 
 const LOCAL_STORAGE_KEY = 'ideaWeaverIdeas';
 
-// Helper to safely parse dates from JSON
-const parseDates = (idea: any): Idea => ({
-  ...idea,
-  isArchived: idea.isArchived ?? false,
-  createdAt: new Date(idea.createdAt),
-  updatedAt: new Date(idea.updatedAt),
-  notes: Array.isArray(idea.notes) 
-    ? idea.notes.map((note: any) => ({
-        ...note,
-        createdAt: new Date(note.createdAt),
-        position: note.position && typeof note.position.x === 'number' && typeof note.position.y === 'number'
-          ? { x: note.position.x, y: note.position.y }
-          : undefined
-      }))
-    : [],
-  connections: idea.connections || [],
-  position: idea.position || { x: 0, y: 0 }
-});
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isPosition = (value: unknown): value is { x: number; y: number } =>
+  isRecord(value) && typeof value.x === 'number' && typeof value.y === 'number';
+
+const parseStoredDate = (value: unknown): Date => {
+  const parsed = value instanceof Date ? value : new Date(typeof value === 'string' || typeof value === 'number' ? value : Date.now());
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+};
+
+const parseStoredNote = (note: unknown): Note => {
+  const storedNote = isRecord(note) ? note : {};
+  return {
+    id: typeof storedNote.id === 'string' && storedNote.id ? storedNote.id : uuidv4(),
+    content: typeof storedNote.content === 'string' ? storedNote.content : '',
+    createdAt: parseStoredDate(storedNote.createdAt),
+    ...(isPosition(storedNote.position) && { position: storedNote.position }),
+  };
+};
+
+// Normalize persisted/imported JSON before putting it back into app state.
+const parseDates = (idea: unknown): Idea => {
+  const storedIdea = isRecord(idea) ? idea : {};
+  return {
+    id: typeof storedIdea.id === 'string' && storedIdea.id ? storedIdea.id : uuidv4(),
+    title: typeof storedIdea.title === 'string' && storedIdea.title ? storedIdea.title : 'Untitled idea',
+    description: typeof storedIdea.description === 'string' ? storedIdea.description : '',
+    tags: Array.isArray(storedIdea.tags) ? storedIdea.tags.filter((tag): tag is string => typeof tag === 'string') : [],
+    category: typeof storedIdea.category === 'string' && storedIdea.category ? storedIdea.category : 'Uncategorized',
+    ...(typeof storedIdea.feeling === 'string' && { feeling: storedIdea.feeling }),
+    isFavorite: storedIdea.isFavorite === true,
+    isArchived: storedIdea.isArchived === true,
+    createdAt: parseStoredDate(storedIdea.createdAt),
+    updatedAt: parseStoredDate(storedIdea.updatedAt),
+    notes: Array.isArray(storedIdea.notes) ? storedIdea.notes.map(parseStoredNote) : [],
+    connections: Array.isArray(storedIdea.connections)
+      ? storedIdea.connections.filter((connection): connection is string => typeof connection === 'string')
+      : [],
+    position: isPosition(storedIdea.position) ? storedIdea.position : { x: 0, y: 0 },
+  };
+};
 
 export const useIdeas = () => {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'graph'>('list');
+  const canPersistRef = useRef(false);
 
   // Load ideas from local storage
   useEffect(() => {
@@ -47,17 +72,17 @@ export const useIdeas = () => {
           if (Array.isArray(parsedIdeas)) {
             const processedIdeas = parsedIdeas.map(parseDates);
             setIdeas(processedIdeas);
+            canPersistRef.current = true;
           } else {
-            // Handle invalid data format
             console.error('Stored ideas are not in array format');
-            setIdeas([]);
+            setError('Failed to load your ideas. Please try refreshing the page.');
           }
+        } else {
+          canPersistRef.current = true;
         }
       } catch (error) {
         console.error('Error loading ideas from local storage:', error);
         setError('Failed to load your ideas. Please try refreshing the page.');
-        // Fallback to empty array on error
-        setIdeas([]);
       } finally {
         setLoading(false);
       }
@@ -68,7 +93,7 @@ export const useIdeas = () => {
 
   // Save ideas to local storage whenever they change
   useEffect(() => {
-    if (!loading) {
+    if (!loading && canPersistRef.current) {
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(ideas));
       } catch (error) {
@@ -129,6 +154,18 @@ export const useIdeas = () => {
     };
     setIdeas(prevIdeas => [...prevIdeas, newIdea]);
     return newIdea;
+  }, []);
+
+  const importIdeas = useCallback((importedIdeas: Idea[]) => {
+    const normalizedIdeas = importedIdeas.map(parseDates);
+    setIdeas(prevIdeas => {
+      const importedIds = new Set(normalizedIdeas.map(idea => idea.id));
+      return [
+        ...prevIdeas.filter(idea => !importedIds.has(idea.id)),
+        ...normalizedIdeas,
+      ];
+    });
+    return normalizedIdeas.length;
   }, []);
 
   // Delete an idea
@@ -279,6 +316,7 @@ export const useIdeas = () => {
     error,
     viewMode,
     addIdea, 
+    importIdeas,
     updateIdea, 
     duplicateIdea,
     deleteIdea, 
