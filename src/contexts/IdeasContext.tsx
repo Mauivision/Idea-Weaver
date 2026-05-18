@@ -10,6 +10,7 @@ interface IdeasContextType {
   error: string | null;
   viewMode: 'list' | 'graph';
   addIdea: (idea: Omit<Idea, 'id' | 'createdAt' | 'updatedAt' | 'notes' | 'connections'>) => Idea;
+  importIdeas: (ideas: Idea[]) => number;
   updateIdea: (idea: Idea) => void;
   duplicateIdea: (idea: Idea) => Idea;
   deleteIdea: (id: string) => void;
