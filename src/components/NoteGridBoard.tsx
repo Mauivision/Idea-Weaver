@@ -22,11 +22,10 @@ import {
   Delete as DeleteIcon,
   Link as LinkIcon,
   LinkOff as LinkOffIcon,
-  EditNote as EditNoteIcon,
   AutoAwesome as SparkleIcon,
 } from '@mui/icons-material';
 import { Idea, Note } from '../models/Idea';
-import { BounceIn, popIn, pulseGlow } from './Animations';
+import { BounceIn, popIn } from './Animations';
 
 const GRID_CELL = 40;
 const QUICK_NOTES_TITLE = 'Quick notes';
@@ -121,18 +120,6 @@ export default function NoteGridBoard({
     });
   });
 
-  const usedSlots = useMemo(() => {
-    const set = new Set<string>();
-    ideas.forEach((idea) =>
-      idea.notes.forEach((note) => {
-        if (note.position) {
-          set.add(`${Math.round(note.position.x / GRID_CELL)},${Math.round(note.position.y / GRID_CELL)}`);
-        }
-      })
-    );
-    return set;
-  }, [ideas]);
-
   const getBoardCoords = useCallback((e: { clientX: number; clientY: number }) => {
     const el = boardRef.current;
     if (!el) return { x: 0, y: 0 };
@@ -163,16 +150,8 @@ export default function NoteGridBoard({
       const snapped = snap(coords);
       const ideaId = getOrCreateQuickNotesIdea();
       addNote(ideaId, '', snapped);
-      const newFlat = ideas.flatMap((idea) => idea.notes.map((n) => ({ ideaId: idea.id, noteId: n.id })));
-      setTimeout(() => {
-        const allNotes = ideas.flatMap((idea) => idea.notes);
-        const newest = allNotes[allNotes.length - 1];
-        if (newest) {
-          // editing will be set by the re-render
-        }
-      }, 50);
     },
-    [getBoardCoords, getOrCreateQuickNotesIdea, addNote, ideas, editingNote]
+    [getBoardCoords, getOrCreateQuickNotesIdea, addNote, editingNote]
   );
 
   const startEditing = useCallback((ideaId: string, noteId: string, currentContent: string) => {
