@@ -120,18 +120,6 @@ export default function NoteGridBoard({
     });
   });
 
-  const usedSlots = useMemo(() => {
-    const set = new Set<string>();
-    ideas.forEach((idea) =>
-      idea.notes.forEach((note) => {
-        if (note.position) {
-          set.add(`${Math.round(note.position.x / GRID_CELL)},${Math.round(note.position.y / GRID_CELL)}`);
-        }
-      })
-    );
-    return set;
-  }, [ideas]);
-
   const getBoardCoords = useCallback((e: { clientX: number; clientY: number }) => {
     const el = boardRef.current;
     if (!el) return { x: 0, y: 0 };
