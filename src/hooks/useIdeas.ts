@@ -6,29 +6,72 @@ import { playCaptureSound } from '../lib/sound';
 
 const LOCAL_STORAGE_KEY = 'ideaWeaverIdeas';
 
-// Helper to safely parse dates from JSON
-const parseDates = (idea: any): Idea => ({
-  ...idea,
-  isArchived: idea.isArchived ?? false,
-  createdAt: new Date(idea.createdAt),
-  updatedAt: new Date(idea.updatedAt),
-  notes: Array.isArray(idea.notes) 
-    ? idea.notes.map((note: any) => ({
-        ...note,
-        createdAt: new Date(note.createdAt),
-        position: note.position && typeof note.position.x === 'number' && typeof note.position.y === 'number'
-          ? { x: note.position.x, y: note.position.y }
-          : undefined
-      }))
-    : [],
-  connections: idea.connections || [],
-  position: idea.position || { x: 0, y: 0 }
-});
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const parseStoredDate = (value: unknown): Date => {
+  const parsed = value instanceof Date || typeof value === 'string' || typeof value === 'number'
+    ? new Date(value)
+    : new Date();
+
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+};
+
+const parsePosition = (value: unknown): { x: number; y: number } | undefined => {
+  if (!isRecord(value) || typeof value.x !== 'number' || typeof value.y !== 'number') {
+    return undefined;
+  }
+
+  return { x: value.x, y: value.y };
+};
+
+const parseStoredNote = (value: unknown): Note | null => {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  return {
+    id: typeof value.id === 'string' && value.id ? value.id : uuidv4(),
+    content: typeof value.content === 'string' ? value.content : '',
+    createdAt: parseStoredDate(value.createdAt),
+    position: parsePosition(value.position),
+  };
+};
+
+// Normalize persisted/imported data before the rest of the app reads it.
+const parseDates = (value: unknown): Idea => {
+  if (!isRecord(value)) {
+    throw new Error('Invalid idea record');
+  }
+
+  const position = parsePosition(value.position);
+
+  return {
+    id: typeof value.id === 'string' && value.id ? value.id : uuidv4(),
+    title: typeof value.title === 'string' ? value.title : '',
+    description: typeof value.description === 'string' ? value.description : '',
+    tags: Array.isArray(value.tags) ? value.tags.filter((tag): tag is string => typeof tag === 'string') : [],
+    category: typeof value.category === 'string' && value.category ? value.category : 'Uncategorized',
+    feeling: typeof value.feeling === 'string' ? value.feeling : undefined,
+    isFavorite: typeof value.isFavorite === 'boolean' ? value.isFavorite : false,
+    isArchived: typeof value.isArchived === 'boolean' ? value.isArchived : false,
+    createdAt: parseStoredDate(value.createdAt),
+    updatedAt: parseStoredDate(value.updatedAt),
+    notes: Array.isArray(value.notes)
+      ? value.notes.map(parseStoredNote).filter((note): note is Note => note !== null)
+      : [],
+    position: position || { x: 0, y: 0 },
+    connections: Array.isArray(value.connections)
+      ? value.connections.filter((connection): connection is string => typeof connection === 'string')
+      : [],
+  };
+};
 
 export const useIdeas = () => {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [canPersist, setCanPersist] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'graph'>('list');
 
   // Load ideas from local storage
@@ -47,17 +90,19 @@ export const useIdeas = () => {
           if (Array.isArray(parsedIdeas)) {
             const processedIdeas = parsedIdeas.map(parseDates);
             setIdeas(processedIdeas);
+            setCanPersist(true);
           } else {
-            // Handle invalid data format
             console.error('Stored ideas are not in array format');
-            setIdeas([]);
+            setError('Failed to load your ideas. Please export a backup before making changes.');
+            setCanPersist(false);
           }
+        } else {
+          setCanPersist(true);
         }
       } catch (error) {
         console.error('Error loading ideas from local storage:', error);
-        setError('Failed to load your ideas. Please try refreshing the page.');
-        // Fallback to empty array on error
-        setIdeas([]);
+        setError('Failed to load your ideas. Please export a backup before making changes.');
+        setCanPersist(false);
       } finally {
         setLoading(false);
       }
@@ -68,7 +113,7 @@ export const useIdeas = () => {
 
   // Save ideas to local storage whenever they change
   useEffect(() => {
-    if (!loading) {
+    if (!loading && canPersist) {
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(ideas));
       } catch (error) {
@@ -76,7 +121,7 @@ export const useIdeas = () => {
         setError('Failed to save your changes. Please check your browser storage settings.');
       }
     }
-  }, [ideas, loading]);
+  }, [ideas, loading, canPersist]);
 
   // Add a new idea
   const addIdea = useCallback((idea: Omit<Idea, 'id' | 'createdAt' | 'updatedAt' | 'notes' | 'connections'>) => {
@@ -268,6 +313,36 @@ export const useIdeas = () => {
     ));
   }, []);
 
+  const importIdeas = useCallback((importedIdeas: unknown[]) => {
+    const processedIdeas = importedIdeas.reduce<Idea[]>((acc, importedIdea) => {
+      try {
+        const parsedIdea = parseDates(importedIdea);
+        if (parsedIdea.title.trim().length > 0) {
+          acc.push(parsedIdea);
+        }
+      } catch (error) {
+        console.error('Skipping invalid imported idea:', error);
+      }
+
+      return acc;
+    }, []);
+
+    if (processedIdeas.length === 0) {
+      return 0;
+    }
+
+    setIdeas(prevIdeas => {
+      const importedIds = new Set(processedIdeas.map(idea => idea.id));
+      return [
+        ...prevIdeas.filter(idea => !importedIds.has(idea.id)),
+        ...processedIdeas,
+      ];
+    });
+    setCanPersist(true);
+
+    return processedIdeas.length;
+  }, []);
+
   const activeIdeas = ideas.filter(idea => !idea.isArchived);
   const archivedIdeas = ideas.filter(idea => idea.isArchived);
 
@@ -290,6 +365,7 @@ export const useIdeas = () => {
     connectIdeas,
     disconnectIdeas,
     updateIdeaPosition,
+    importIdeas,
     toggleViewMode
   };
 }; 

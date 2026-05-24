@@ -25,8 +25,17 @@ import { Idea } from '../models/Idea';
 
 interface DataExportImportProps {
   ideas: Idea[];
-  onImport: (ideas: Idea[]) => void;
+  onImport: (ideas: unknown[]) => void;
 }
+
+const isImportableIdea = (value: unknown): value is Record<string, unknown> => {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as Record<string, unknown>).id === 'string' &&
+    typeof (value as Record<string, unknown>).title === 'string'
+  );
+};
 
 const DataExportImport: React.FC<DataExportImportProps> = ({ ideas, onImport }) => {
   const [showDialog, setShowDialog] = useState(false);
@@ -83,10 +92,7 @@ const DataExportImport: React.FC<DataExportImportProps> = ({ ideas, onImport }) 
           throw new Error('Invalid file format');
         }
 
-        // Validate imported data
-        const validIdeas = imported.filter((idea: any) => 
-          idea.id && idea.title && idea.category
-        );
+        const validIdeas = imported.filter(isImportableIdea);
 
         if (validIdeas.length === 0) {
           throw new Error('No valid ideas found in file');
