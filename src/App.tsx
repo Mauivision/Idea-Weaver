@@ -62,6 +62,7 @@ function App() {
     connectIdeas,
     disconnectIdeas,
     updateIdeaPosition,
+    importIdeas,
     toggleViewMode
   } = useIdeasContext();
   
@@ -240,7 +241,7 @@ function App() {
   };
 
   const handleExport = (format: 'json' | 'csv' | 'pdf') => {
-    exportIdeas(ideas, format);
+    exportIdeas(allIdeas, format);
   };
 
   // Handle idea reordering in list view
@@ -386,22 +387,15 @@ function App() {
     showToast(`Deleted ${ids.length} idea${ids.length !== 1 ? 's' : ''}`, 'success');
   }, [deleteIdea, showToast, setSelectedIdeas]);
 
-  const handleImport = useCallback((importedIdeas: Idea[]) => {
-    importedIdeas.forEach(idea => {
-      // Validate and add imported idea
-      if (idea.id && idea.title && idea.category) {
-        addIdea({
-          title: idea.title,
-          description: idea.description || '',
-          category: idea.category,
-          tags: idea.tags || [],
-          isFavorite: idea.isFavorite || false,
-          position: idea.position || { x: Math.random() * 800, y: Math.random() * 600 }
-        });
-      }
-    });
-    showToast(`Imported ${importedIdeas.length} idea${importedIdeas.length !== 1 ? 's' : ''}`, 'success');
-  }, [addIdea, showToast]);
+  const handleImport = useCallback((importedIdeas: unknown[]) => {
+    const importedCount = importIdeas(importedIdeas);
+    if (importedCount === 0) {
+      showToast('No valid ideas found in import file', 'warning');
+      return;
+    }
+
+    showToast(`Imported ${importedCount} idea${importedCount !== 1 ? 's' : ''}`, 'success');
+  }, [importIdeas, showToast]);
 
   // Compute categories from ideas
   const categories = React.useMemo(() => {
@@ -792,7 +786,7 @@ function App() {
         {/* Data Export/Import Button */}
         <Box sx={{ position: 'fixed', bottom: 80, right: 20, zIndex: 1000 }}>
           <DataExportImport
-            ideas={ideas}
+            ideas={allIdeas}
             onImport={handleImport}
           />
         </Box>

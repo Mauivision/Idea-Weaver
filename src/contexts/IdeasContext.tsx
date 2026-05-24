@@ -21,6 +21,7 @@ interface IdeasContextType {
   connectIdeas: (sourceId: string, targetId: string) => void;
   disconnectIdeas: (sourceId: string, targetId: string) => void;
   updateIdeaPosition: (ideaId: string, position: { x: number, y: number }) => void;
+  importIdeas: (ideas: unknown[]) => number;
   toggleViewMode: () => void;
 }
 
