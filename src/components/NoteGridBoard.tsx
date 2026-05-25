@@ -244,7 +244,7 @@ export default function NoteGridBoard({
 
         const source = noteCenter(sourceNote);
         const target = noteCenter(targetNote);
-        lines.push({ ...source, x2: target.x, y2: target.y, key: pairKey });
+        lines.push({ x1: source.x, y1: source.y, x2: target.x, y2: target.y, key: pairKey });
       });
     });
 
