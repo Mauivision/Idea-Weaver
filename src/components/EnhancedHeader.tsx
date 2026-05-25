@@ -63,8 +63,8 @@ interface EnhancedHeaderProps {
   showFavoritesOnly: boolean;
   onFavoritesToggle: (show: boolean) => void;
   onNewIdea: () => void;
-  onViewModeChange: (mode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave') => void;
-  currentViewMode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave';
+  onViewModeChange: (mode: 'board' | 'clusters' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave') => void;
+  currentViewMode: 'board' | 'clusters' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave';
   onThemeToggle: () => void;
   isDarkMode: boolean;
   onExport: (format: 'json' | 'csv' | 'pdf') => void;
