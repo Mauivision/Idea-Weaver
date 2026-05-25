@@ -55,5 +55,9 @@ if (rootEl) {
   );
 }
 
-// Register service worker for offline functionality
-serviceWorker.register(); 
+// Keep production offline support, but never let a stale worker serve old code in local development.
+if (process.env.NODE_ENV === 'production') {
+  serviceWorker.register();
+} else {
+  serviceWorker.unregister();
+}

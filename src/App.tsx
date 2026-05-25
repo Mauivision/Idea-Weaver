@@ -349,11 +349,6 @@ function App() {
     setIsDarkMode(!isDarkMode);
   };
 
-  const handleConnectIdea = (projectId: string, ideaId: string) => {
-    // TODO: Implement project-idea connection
-    console.log('Connecting idea', ideaId, 'to project', projectId);
-  };
-
   // Wrapper for components expecting Partial<Idea>
   const handleAddIdeaPartial = useCallback((ideaData: Partial<Idea>) => {
     // Convert Partial<Idea> to required fields
@@ -691,7 +686,6 @@ function App() {
               {currentViewMode === 'projects' && (
                 <ProjectManager 
                   ideas={filteredIdeas}
-                  onConnectIdea={handleConnectIdea}
                 />
               )}
 
