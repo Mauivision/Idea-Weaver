@@ -32,6 +32,7 @@ import IdeaTemplates from './components/IdeaTemplates';
 import NoteGridBoard from './components/NoteGridBoard';
 import ArchiveDialog from './components/ArchiveDialog';
 import IdeaWeave from './components/IdeaWeave';
+import ClusterGrid from './components/ClusterGrid';
 import { Idea } from './models/Idea';
 import AutosaveIndicator from './components/AutosaveIndicator';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
@@ -75,7 +76,7 @@ function App() {
     message: '',
     severity: 'info'
   });
-  const [currentViewMode, setCurrentViewMode] = useState<'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave'>('board');
+  const [currentViewMode, setCurrentViewMode] = useState<'board' | 'clusters' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave'>('board');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [advancedSearchResults, setAdvancedSearchResults] = useState<Idea[]>([]);
@@ -255,7 +256,7 @@ function App() {
     showToast('Ideas reordered!', 'success');
   }, [updateIdea, showToast]);
 
-  const handleViewModeChange = useCallback((mode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave') => {
+  const handleViewModeChange = useCallback((mode: 'board' | 'clusters' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave') => {
     setCurrentViewMode(mode);
     if (mode === 'list' || mode === 'graph') {
       toggleViewMode();
@@ -443,7 +444,7 @@ function App() {
         
         {loading && <LinearProgress color="secondary" />}
         
-        <Container maxWidth={currentViewMode === 'list' ? 'lg' : false} disableGutters={currentViewMode === 'board' || currentViewMode === 'graph' || currentViewMode === 'mindmap' || currentViewMode === 'flowchart' || currentViewMode === 'weave'} sx={{ mt: 2, mb: 4, flexGrow: 1 }}>
+        <Container maxWidth={currentViewMode === 'list' ? 'lg' : false} disableGutters={currentViewMode === 'board' || currentViewMode === 'clusters' || currentViewMode === 'graph' || currentViewMode === 'mindmap' || currentViewMode === 'flowchart' || currentViewMode === 'weave'} sx={{ mt: 2, mb: 4, flexGrow: 1 }}>
           <Snackbar 
             open={snackbar.open} 
             autoHideDuration={3000} 
@@ -578,6 +579,20 @@ function App() {
                     addIdea={addIdeaWithSprite}
                   />
                   </Box>
+                </Box>
+              )}
+
+              {currentViewMode === 'clusters' && (
+                <Box sx={{ height: 'calc(100vh - 140px)', width: '100%' }}>
+                  <ClusterGrid
+                    ideas={filteredIdeas}
+                    onUpdate={updateIdea}
+                    onDelete={handleDeleteIdea}
+                    onToggleFavorite={toggleFavorite}
+                    onAddIdea={addIdea}
+                    onAddNote={handleAddNoteToIdea}
+                    categories={categories.filter(cat => cat !== 'All')}
+                  />
                 </Box>
               )}
 
