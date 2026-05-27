@@ -142,6 +142,16 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
   // Keyboard shortcuts
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+
       if (event.ctrlKey || event.metaKey) {
         switch (event.key) {
           case 's':
@@ -171,7 +181,6 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
 
   const viewModes = [
     { id: 'board', label: 'Notes Board', icon: <GridOnIcon />, description: 'Notes on a snap grid (home)' },
-    { id: 'clusters', label: 'Clusters', icon: <HomeIcon />, description: 'Ideas grouped into weavy clusters' },
     { id: 'list', label: 'Idea List', icon: <LightbulbIcon />, description: 'Browse ideas in a list format' },
     { id: 'graph', label: 'Idea Graph', icon: <AccountTreeIcon />, description: 'Visualize idea connections' },
     { id: 'flowchart', label: 'Flow Chart', icon: <AutoGraphIcon />, description: 'Create flowcharts from ideas' },
@@ -185,7 +194,6 @@ const EnhancedHeader: React.FC<EnhancedHeaderProps> = ({
 
   const navigationItems = [
     { id: 'board', label: 'Home (Notes Board)', icon: <HomeIcon /> },
-    { id: 'clusters', label: 'Clusters', icon: <HomeIcon /> },
     { id: 'list', label: 'Ideas', icon: <LightbulbIcon /> },
     { id: 'projects', label: 'Projects', icon: <AssignmentIcon /> },
     { id: 'brainstorm', label: 'Brainstorm', icon: <PsychologyIcon /> },
