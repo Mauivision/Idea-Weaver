@@ -154,16 +154,5 @@ const QuickActionsMenu = React.memo<QuickActionsMenuProps>(({
   );
 });
 
-QuickActionsMenu.propTypes = {
-  idea: PropTypes.object.isRequired,
-  onEdit: PropTypes.func,
-  onDelete: PropTypes.func,
-  onToggleFavorite: PropTypes.func,
-  onConnect: PropTypes.func,
-  onDuplicate: PropTypes.func,
-  onShare: PropTypes.func,
-  onArchive: PropTypes.func
-};
-
 export default QuickActionsMenu;
 
