@@ -157,7 +157,9 @@ export default function NoteGridBoard({
 
   const handleBoardClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if ((e.target as HTMLElement) !== boardRef.current) return;
+      // Only create notes if clicking directly on the board or empty state, not on existing note elements
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-note-element]')) return;
       if (editingNote) return;
       const coords = getBoardCoords(e);
       const snapped = snap(coords);
@@ -345,6 +347,7 @@ export default function NoteGridBoard({
         return (
           <Box
             key={`${ideaId}-${note.id}`}
+            data-note-element
             sx={{
               position: 'absolute',
               left: pos.x,
