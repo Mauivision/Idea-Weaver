@@ -243,7 +243,7 @@ function App() {
   };
 
   const handleExport = (format: 'json' | 'csv' | 'pdf') => {
-    exportIdeas(ideas, format);
+    exportIdeas(allIdeas, format);
   };
 
   // Handle idea reordering in list view
@@ -834,7 +834,7 @@ function App() {
         {/* Data Export/Import Button */}
         <Box sx={{ position: 'fixed', bottom: 80, right: 20, zIndex: 1000 }}>
           <DataExportImport
-            ideas={ideas}
+            ideas={allIdeas}
             onImport={handleImport}
           />
         </Box>
