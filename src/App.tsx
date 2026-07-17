@@ -30,6 +30,8 @@ import DuplicateDetection from './components/DuplicateDetection';
 import SmartLinking from './components/SmartLinking';
 import IdeaTemplates from './components/IdeaTemplates';
 import NoteGridBoard from './components/NoteGridBoard';
+import ClusterGrid from './components/ClusterGrid';
+import IdeaFocusWeb from './components/IdeaFocusWeb';
 import ArchiveDialog from './components/ArchiveDialog';
 import IdeaWeave from './components/IdeaWeave';
 import { Idea } from './models/Idea';
@@ -75,7 +77,7 @@ function App() {
     message: '',
     severity: 'info'
   });
-  const [currentViewMode, setCurrentViewMode] = useState<'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave'>('board');
+  const [currentViewMode, setCurrentViewMode] = useState<'board' | 'clusters' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave'>('board');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [advancedSearchResults, setAdvancedSearchResults] = useState<Idea[]>([]);
@@ -84,6 +86,7 @@ function App() {
   const [showSmartLinking, setShowSmartLinking] = useState(true);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [focusedIdeaId, setFocusedIdeaId] = useState<string | null>(null);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [soundOn, setSoundOnState] = useState(getSoundOn);
   const [spriteMessage, setSpriteMessage] = useState<string | null>(null);
@@ -240,7 +243,7 @@ function App() {
   };
 
   const handleExport = (format: 'json' | 'csv' | 'pdf') => {
-    exportIdeas(ideas, format);
+    exportIdeas(allIdeas, format);
   };
 
   // Handle idea reordering in list view
@@ -255,7 +258,7 @@ function App() {
     showToast('Ideas reordered!', 'success');
   }, [updateIdea, showToast]);
 
-  const handleViewModeChange = useCallback((mode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave') => {
+  const handleViewModeChange = useCallback((mode: 'board' | 'clusters' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave') => {
     setCurrentViewMode(mode);
     if (mode === 'list' || mode === 'graph') {
       toggleViewMode();
@@ -443,7 +446,7 @@ function App() {
         
         {loading && <LinearProgress color="secondary" />}
         
-        <Container maxWidth={currentViewMode === 'list' ? 'lg' : false} disableGutters={currentViewMode === 'board' || currentViewMode === 'graph' || currentViewMode === 'mindmap' || currentViewMode === 'flowchart' || currentViewMode === 'weave'} sx={{ mt: 2, mb: 4, flexGrow: 1 }}>
+        <Container maxWidth={currentViewMode === 'list' ? 'lg' : false} disableGutters={currentViewMode === 'board' || currentViewMode === 'clusters' || currentViewMode === 'graph' || currentViewMode === 'mindmap' || currentViewMode === 'flowchart' || currentViewMode === 'weave'} sx={{ mt: 2, mb: 4, flexGrow: 1 }}>
           <Snackbar 
             open={snackbar.open} 
             autoHideDuration={3000} 
@@ -576,8 +579,25 @@ function App() {
                     deleteNote={deleteNote}
                     updateNote={updateNote}
                     addIdea={addIdeaWithSprite}
+                    onAddConnection={connectIdeas}
+                    onRemoveConnection={handleDisconnectIdeas}
                   />
                   </Box>
+                </Box>
+              )}
+
+              {currentViewMode === 'clusters' && (
+                <Box sx={{ height: 'calc(100vh - 140px)', width: '100%' }}>
+                  <ClusterGrid
+                    ideas={ideas}
+                    onUpdate={updateIdea}
+                    onDelete={handleDeleteIdea}
+                    onToggleFavorite={toggleFavorite}
+                    onAddIdea={addIdea}
+                    onAddNote={handleAddNoteToIdea}
+                    categories={categories.filter(cat => cat !== 'All')}
+                    onFocusIdea={setFocusedIdeaId}
+                  />
                 </Box>
               )}
 
@@ -749,6 +769,28 @@ function App() {
           )}
         </Container>
 
+        {/* Focus Web overlay */}
+        {focusedIdeaId && (() => {
+          const focusedIdea = ideas.find(i => i.id === focusedIdeaId);
+          if (!focusedIdea) return null;
+          return (
+            <Box sx={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1100, bgcolor: 'background.default' }}>
+              <IdeaFocusWeb
+                idea={focusedIdea}
+                allIdeas={ideas}
+                onBack={() => setFocusedIdeaId(null)}
+                onUpdate={updateIdea}
+                onToggleFavorite={toggleFavorite}
+                onAddNote={handleAddNoteToIdea}
+                onDeleteNote={handleDeleteNoteFromIdea}
+                onAddConnection={connectIdeas}
+                onRemoveConnection={disconnectIdeas}
+                onFocusIdea={setFocusedIdeaId}
+              />
+            </Box>
+          );
+        })()}
+
         {/* Keyboard Shortcuts Help Dialog */}
         <KeyboardShortcutsHelp
           open={showKeyboardHelp}
@@ -792,7 +834,7 @@ function App() {
         {/* Data Export/Import Button */}
         <Box sx={{ position: 'fixed', bottom: 80, right: 20, zIndex: 1000 }}>
           <DataExportImport
-            ideas={ideas}
+            ideas={allIdeas}
             onImport={handleImport}
           />
         </Box>
