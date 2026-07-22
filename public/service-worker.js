@@ -28,8 +28,28 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// Cache and return requests
+// Always check the network for navigations so a deploy cannot pin an old app shell.
 self.addEventListener('fetch', event => {
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            const responseToCache = response.clone();
+            event.waitUntil(
+              caches.open(CACHE_NAME)
+                .then(cache => cache.put('/index.html', responseToCache))
+            );
+          }
+
+          return response;
+        })
+        .catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
+
+  // Static assets are immutable build artifacts and can remain cache-first.
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -57,12 +77,6 @@ self.addEventListener('fetch', event => {
 
             return response;
           });
-      })
-      .catch(() => {
-        // Offline fallback for important pages
-        if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
-        }
       })
   );
 });
