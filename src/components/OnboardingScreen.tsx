@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  ONBOARDING_FIRST_NOTE_KEY,
+  composeOnboardingNoteText,
+  persistOnboardingFirstNote,
+} from '../lib/onboardingFirstNote';
 
 const ONBOARDING_STORAGE_KEY = 'ideaWeaverOnboardingCompleted';
-export const ONBOARDING_FIRST_NOTE_KEY = 'ideaWeaverOnboardingFirstNote';
+export { ONBOARDING_FIRST_NOTE_KEY };
 
 // Web Speech API types (shared via Window augmentation below)
 interface SpeechRecognitionEvent extends Event {
@@ -68,10 +73,12 @@ function OnboardingScreen({ onComplete, showToast }: OnboardingScreenProps) {
 
   const completeFlow = useCallback(
     (premiumUnlocked: boolean, firstNote?: string) => {
-      localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
+      // Persist the note before marking onboarding complete so a tab close
+      // during the fade cannot leave onboarding done with no saved note.
       if (firstNote?.trim()) {
-        sessionStorage.setItem(ONBOARDING_FIRST_NOTE_KEY, firstNote.trim());
+        persistOnboardingFirstNote(firstNote);
       }
+      localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
       sessionStorage.setItem('onboardingJustCompleted', premiumUnlocked ? 'unlocked' : 'skipped');
       setIsTransitioning(true);
       setTimeout(() => onComplete(premiumUnlocked, firstNote), 600);
@@ -95,16 +102,18 @@ function OnboardingScreen({ onComplete, showToast }: OnboardingScreenProps) {
     // window.location.href = 'https://gumroad.com/l/idea-weaver-unlock';
     console.log('Would open Stripe / Gumroad / Lemon Squeezy checkout for $1.99');
 
+    const noteText = composeOnboardingNoteText(transcript, interimTranscript);
     setIsUnlockLoading(true);
     await new Promise(resolve => setTimeout(resolve, 1800));
     setIsUnlockLoading(false);
     showToast?.('Premium unlocked – thank you!', 'success');
-    completeFlow(true, transcript || undefined);
-  }, [transcript, completeFlow, showToast]);
+    completeFlow(true, noteText || undefined);
+  }, [transcript, interimTranscript, completeFlow, showToast]);
 
   const handleSkip = useCallback(() => {
-    completeFlow(false, transcript || undefined);
-  }, [transcript, completeFlow]);
+    const noteText = composeOnboardingNoteText(transcript, interimTranscript);
+    completeFlow(false, noteText || undefined);
+  }, [transcript, interimTranscript, completeFlow]);
 
   // Setup and teardown Speech Recognition
   useEffect(() => {
