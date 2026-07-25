@@ -37,9 +37,9 @@ import AutosaveIndicator from './components/AutosaveIndicator';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
 import IdeaSprite, { getEncouragement } from './components/IdeaSprite';
 import VoiceInputFab from './components/VoiceInputFab';
-import { ONBOARDING_FIRST_NOTE_KEY } from './components/OnboardingScreen';
 import { createAppTheme } from './theme';
 import { exportIdeas } from './lib/exportUtils';
+import { consumeOnboardingFirstNote } from './lib/onboardingFirstNote';
 import { getStreak } from './lib/streak';
 import { getSoundOn, setSoundOn } from './lib/sound';
 
@@ -93,14 +93,16 @@ function App() {
     setErrorOpen(!!error);
   }, [error]);
 
-  // Handle post-onboarding: create first idea from onboarding, show welcome message
+  // Handle post-onboarding: create first idea from onboarding, show welcome message.
+  // Wait until ideas finish loading so the first note is not overwritten by hydration.
   useEffect(() => {
-    const justCompleted = sessionStorage.getItem('onboardingJustCompleted');
-    const firstNoteContent = sessionStorage.getItem(ONBOARDING_FIRST_NOTE_KEY);
-    sessionStorage.removeItem('onboardingJustCompleted');
-    sessionStorage.removeItem(ONBOARDING_FIRST_NOTE_KEY);
+    if (loading) return;
 
-    if (firstNoteContent?.trim()) {
+    const justCompleted = sessionStorage.getItem('onboardingJustCompleted');
+    sessionStorage.removeItem('onboardingJustCompleted');
+    const firstNoteContent = consumeOnboardingFirstNote();
+
+    if (firstNoteContent) {
       const newIdea = addIdea({
         title: 'First Idea',
         description: '',
@@ -110,7 +112,7 @@ function App() {
         position: { x: Math.random() * 400, y: Math.random() * 300 },
       });
       if (newIdea) {
-        addNote(newIdea.id, firstNoteContent.trim());
+        addNote(newIdea.id, firstNoteContent);
       }
     }
 
@@ -127,7 +129,7 @@ function App() {
         severity: 'info',
       });
     }
-  }, [addIdea, addNote]);
+  }, [loading, addIdea, addNote]);
 
   // Track last save time
   useEffect(() => {
