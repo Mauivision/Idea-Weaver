@@ -51,7 +51,8 @@ function App() {
     loading, 
     error,
     addIdea, 
-    updateIdea, 
+    updateIdea,
+    reorderIdeas,
     duplicateIdea,
     deleteIdea, 
     toggleFavorite,
@@ -245,15 +246,10 @@ function App() {
 
   // Handle idea reordering in list view
   const handleReorderIdeas = useCallback((reorderedIdeas: Idea[]) => {
-    // Batch update all ideas in the new order
-    // This ensures the order is preserved in localStorage
-    reorderedIdeas.forEach((idea) => {
-      if (idea) {
-        updateIdea(idea);
-      }
-    });
+    // Replace full-array order; updateIdea maps by id and cannot move indices
+    reorderIdeas(reorderedIdeas);
     showToast('Ideas reordered!', 'success');
-  }, [updateIdea, showToast]);
+  }, [reorderIdeas, showToast]);
 
   const handleViewModeChange = useCallback((mode: 'board' | 'list' | 'graph' | 'projects' | 'brainstorm' | 'mindmap' | 'templates' | 'analytics' | 'flowchart' | 'weave') => {
     setCurrentViewMode(mode);

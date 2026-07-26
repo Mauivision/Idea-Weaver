@@ -11,6 +11,7 @@ interface IdeasContextType {
   viewMode: 'list' | 'graph';
   addIdea: (idea: Omit<Idea, 'id' | 'createdAt' | 'updatedAt' | 'notes' | 'connections'>) => Idea;
   updateIdea: (idea: Idea) => void;
+  reorderIdeas: (reorderedSubset: Idea[]) => void;
   duplicateIdea: (idea: Idea) => Idea;
   deleteIdea: (id: string) => void;
   toggleFavorite: (id: string) => void;

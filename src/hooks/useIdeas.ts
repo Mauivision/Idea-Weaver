@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Idea, Note } from '../models/Idea';
+import { applyIdeaReorder } from '../lib/ideaReorder';
 import { recordCapture } from '../lib/streak';
 import { playCaptureSound } from '../lib/sound';
 
@@ -104,6 +105,14 @@ export const useIdeas = () => {
         ? { ...updatedIdea, updatedAt: new Date() } 
         : idea
     ));
+  }, []);
+
+  // Persist list drag-and-drop order (updateIdea alone cannot change array indices)
+  const reorderIdeas = useCallback((reorderedSubset: Idea[]) => {
+    setIdeas((prevIdeas) => {
+      const nextIdeas = applyIdeaReorder(prevIdeas, reorderedSubset);
+      return nextIdeas === prevIdeas ? prevIdeas : nextIdeas;
+    });
   }, []);
 
   // Duplicate an idea (copy with new id, notes, position)
@@ -279,7 +288,8 @@ export const useIdeas = () => {
     error,
     viewMode,
     addIdea, 
-    updateIdea, 
+    updateIdea,
+    reorderIdeas,
     duplicateIdea,
     deleteIdea, 
     toggleFavorite,
