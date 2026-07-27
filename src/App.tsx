@@ -40,6 +40,10 @@ import VoiceInputFab from './components/VoiceInputFab';
 import { ONBOARDING_FIRST_NOTE_KEY } from './components/OnboardingScreen';
 import { createAppTheme } from './theme';
 import { exportIdeas } from './lib/exportUtils';
+import {
+  hydrateSearchResultsById,
+  shouldEnableAdvancedSearch,
+} from './lib/hydrateSearchResults';
 import { getStreak } from './lib/streak';
 import { getSoundOn, setSoundOn } from './lib/sound';
 
@@ -320,9 +324,13 @@ function App() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleViewModeChange, handleNewIdeaWithNote]);
 
-  // Filter ideas based on search term, category, favorites, and quick filter (memoized)
+  // Filter ideas based on search term, category, favorites, and quick filter (memoized).
+  // Advanced-search snapshots are List-only and always hydrated from live `ideas` so
+  // Graph/Weave/Flow edits cannot overwrite newer notes captured after visiting List.
   const filteredIdeas = React.useMemo(() => {
-    if (useAdvancedSearch) return advancedSearchResults;
+    if (useAdvancedSearch && currentViewMode === 'list') {
+      return hydrateSearchResultsById(ideas, advancedSearchResults);
+    }
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfWeek = new Date(now);
@@ -343,7 +351,7 @@ function App() {
         (quickFilter === 'uncategorized' && (idea.category === 'Uncategorized' || !idea.category));
       return matchesSearch && matchesCategory && matchesFavorite && matchesQuick;
     });
-  }, [ideas, searchTerm, categoryFilter, showFavoritesOnly, quickFilter, useAdvancedSearch, advancedSearchResults]);
+  }, [ideas, searchTerm, categoryFilter, showFavoritesOnly, quickFilter, useAdvancedSearch, advancedSearchResults, currentViewMode]);
 
   const handleThemeToggle = () => {
     setIsDarkMode(!isDarkMode);
@@ -607,7 +615,9 @@ function App() {
                       ideas={ideas}
                       onSearch={(results) => {
                         setAdvancedSearchResults(results);
-                        setUseAdvancedSearch(results.length !== ideas.length || results.length > 0);
+                        setUseAdvancedSearch(
+                          shouldEnableAdvancedSearch(results.length, ideas.length)
+                        );
                       }}
                       categories={categories.filter(cat => cat !== 'All')}
                     />
