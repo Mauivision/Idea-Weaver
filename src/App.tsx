@@ -759,14 +759,24 @@ function App() {
         <DuplicateDetection
           ideas={ideas}
           onMerge={(sourceId, targetId) => {
-            // Merge ideas by copying notes and connections from source to target
+            // Merge ideas by copying notes, tags, and description from source to target
             const source = ideas.find(i => i.id === sourceId);
             const target = ideas.find(i => i.id === targetId);
             if (source && target) {
+              const mergedDescription = [target.description, source.description]
+                .map((d) => d?.trim())
+                .filter(Boolean)
+                .filter((d, i, arr) => arr.indexOf(d) === i)
+                .join('\n\n');
               const merged: Idea = {
                 ...target,
+                description: mergedDescription,
+                tags: [...new Set([...target.tags, ...source.tags])],
+                isFavorite: target.isFavorite || source.isFavorite,
+                feeling: target.feeling || source.feeling,
                 notes: [...target.notes, ...source.notes],
-                connections: [...new Set([...target.connections, ...source.connections])],
+                connections: [...new Set([...target.connections, ...source.connections])]
+                  .filter((id) => id !== sourceId && id !== targetId),
                 updatedAt: new Date()
               };
               updateIdea(merged);
