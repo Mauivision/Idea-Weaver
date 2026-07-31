@@ -40,8 +40,14 @@ export function recordCapture(): number {
     // else: gap, reset to 1
   }
   const state: StreakState = { count, lastDate: now };
-  localStorage.setItem(STREAK_KEY, JSON.stringify(state));
-  localStorage.setItem(LAST_CAPTURE_KEY, now);
+  // Streak is non-critical UX. Never let storage failures abort capture flows
+  // that call recordCapture() between addIdea() and addNote().
+  try {
+    localStorage.setItem(STREAK_KEY, JSON.stringify(state));
+    localStorage.setItem(LAST_CAPTURE_KEY, now);
+  } catch (error) {
+    console.error('Failed to persist capture streak:', error);
+  }
   return count;
 }
 

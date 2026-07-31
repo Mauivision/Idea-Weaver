@@ -92,7 +92,12 @@ export const useIdeas = () => {
       position: idea.position || { x: Math.random() * 800, y: Math.random() * 600 }
     };
     setIdeas(prevIdeas => [...prevIdeas, newIdea]);
-    recordCapture();
+    // Side effects must not throw — callers chain addNote() after addIdea().
+    try {
+      recordCapture();
+    } catch (error) {
+      console.error('recordCapture failed after addIdea:', error);
+    }
     playCaptureSound();
     return newIdea;
   }, []);
@@ -172,7 +177,11 @@ export const useIdeas = () => {
           } 
         : idea
     ));
-    recordCapture();
+    try {
+      recordCapture();
+    } catch (error) {
+      console.error('recordCapture failed after addNote:', error);
+    }
     playCaptureSound();
     return newNote;
   }, []);
