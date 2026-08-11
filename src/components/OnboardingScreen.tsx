@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { resolveOnboardingFirstNoteContent } from '../lib/onboardingFirstNoteContent';
 
 const ONBOARDING_STORAGE_KEY = 'ideaWeaverOnboardingCompleted';
 export const ONBOARDING_FIRST_NOTE_KEY = 'ideaWeaverOnboardingFirstNote';
@@ -61,10 +62,20 @@ function OnboardingScreen({ onComplete, showToast }: OnboardingScreenProps) {
   const autoRestart = false; // Toggle for optional auto-restart after each result
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const isListeningRef = useRef(false);
+  const typedInputRef = useRef<HTMLTextAreaElement | null>(null);
   const SpeechRecognitionClass = typeof window !== 'undefined'
     ? (window.SpeechRecognition || window.webkitSpeechRecognition)
     : undefined;
   const isSupported = !!SpeechRecognitionClass;
+
+  /** Prefer committed transcript; fall back to visible interim speech or unsaved typed draft. */
+  const resolveFirstNoteContent = useCallback(() => {
+    return resolveOnboardingFirstNoteContent(
+      transcript,
+      interimTranscript,
+      typedInputRef.current?.value
+    );
+  }, [transcript, interimTranscript]);
 
   const completeFlow = useCallback(
     (premiumUnlocked: boolean, firstNote?: string) => {
@@ -95,17 +106,17 @@ function OnboardingScreen({ onComplete, showToast }: OnboardingScreenProps) {
     // window.location.href = 'https://gumroad.com/l/idea-weaver-unlock';
     console.log('Would open Stripe / Gumroad / Lemon Squeezy checkout for $1.99');
 
+    const firstNote = resolveFirstNoteContent();
     setIsUnlockLoading(true);
     await new Promise(resolve => setTimeout(resolve, 1800));
     setIsUnlockLoading(false);
     showToast?.('Premium unlocked – thank you!', 'success');
-    completeFlow(true, transcript || undefined);
-  }, [transcript, completeFlow, showToast]);
+    completeFlow(true, firstNote);
+  }, [resolveFirstNoteContent, completeFlow, showToast]);
 
   const handleSkip = useCallback(() => {
-    completeFlow(false, transcript || undefined);
-  }, [transcript, completeFlow]);
-
+    completeFlow(false, resolveFirstNoteContent());
+  }, [resolveFirstNoteContent, completeFlow]);
   // Setup and teardown Speech Recognition
   useEffect(() => {
     if (!SpeechRecognitionClass || !isSupported) return;
@@ -311,6 +322,7 @@ function OnboardingScreen({ onComplete, showToast }: OnboardingScreenProps) {
           )}
           <form onSubmit={handleTextSubmit}>
             <textarea
+              ref={typedInputRef}
               placeholder="What's on your mind?"
               style={{
                 width: '100%',

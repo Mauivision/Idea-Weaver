@@ -212,6 +212,14 @@ const IdeaList: React.FC<IdeaListProps> = React.memo(({
               size="small"
               variant="contained"
               onClick={() => {
+                const count = selectedIdeas.size;
+                if (
+                  !window.confirm(
+                    `Delete ${count} selected idea${count !== 1 ? 's' : ''}? This cannot be undone.`
+                  )
+                ) {
+                  return;
+                }
                 selectedIdeas.forEach(id => onDelete(id));
                 updateSelection(new Set());
               }}
