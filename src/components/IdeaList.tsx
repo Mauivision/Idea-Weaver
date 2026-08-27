@@ -173,11 +173,6 @@ const IdeaList: React.FC<IdeaListProps> = React.memo(({
     });
   }, []);
 
-  const handleGridClick = useCallback((e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('[data-idea-card]')) return;
-    updateSelection(new Set());
-  }, [updateSelection]);
-
   // Time-aware state: Sleeping (7+ days), Warm (recent), Growing (notes added recently)
   const getIdeaState = useCallback((idea: Idea): 'sleeping' | 'warm' | 'growing' | null => {
     const now = Date.now();
