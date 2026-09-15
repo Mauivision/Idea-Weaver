@@ -33,8 +33,8 @@ import {
   NoteAdd as NoteAddIcon,
   CenterFocusStrong as FocusIcon,
 } from '@mui/icons-material';
-import { Idea } from '../models/Idea.ts';
-import { popIn, pulseGlow } from './Animations.tsx';
+import { Idea } from '../models/Idea';
+import { popIn, pulseGlow } from './Animations';
 
 interface ClusterGridProps {
   ideas: Idea[];
