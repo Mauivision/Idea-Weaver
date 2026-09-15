@@ -1,0 +1,17 @@
+{
+  "name": "Idea Weaver",
+  "install": "npm install",
+  "terminals": [
+    {
+      "name": "dev-server",
+      "command": "BROWSER=none npm start",
+      "description": "Create React App dev server for Idea Weaver on http://localhost:3000"
+    }
+  ],
+  "ports": [
+    {
+      "name": "web",
+      "port": 3000
+    }
+  ]
+}
